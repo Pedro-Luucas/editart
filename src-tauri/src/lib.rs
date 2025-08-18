@@ -34,7 +34,14 @@ pub fn run() {
             get_clients_by_name,
             list_clients,
             update_client,
-            delete_client
+            delete_client,
+            create_order,
+            get_order_by_id,
+            get_orders_by_client_id,
+            get_orders_by_date_range,
+            list_orders,
+            update_order,
+            delete_order
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

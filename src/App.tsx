@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
-import CreateClient from "./pages/CreateClient";
+import Clients from "./pages/Clients";
+import Orders from "./pages/Orders";
+import Settings from "./pages/Settings";
 import "./App.css";
 
 function App() {
@@ -26,10 +29,20 @@ function App() {
     };
   }, []);
 
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page);
+    // Atualizar a URL hash para manter sincronização
+    window.location.hash = page;
+  };
+
   const renderPage = () => {
     switch (currentPage) {
-      case "create-client":
-        return <CreateClient />;
+      case "clients":
+        return <Clients />;
+      case "orders":
+        return <Orders />;
+      case "settings":
+        return <Settings />;
       case "home":
       default:
         return <Home />;
@@ -37,9 +50,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <Layout currentPage={currentPage} onNavigate={handleNavigate}>
       {renderPage()}
-    </div>
+    </Layout>
   );
 }
 

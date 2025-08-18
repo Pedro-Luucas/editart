@@ -1,6 +1,6 @@
 import { useState } from "react";
-import reactLogo from "../assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
+import { Users, ClipboardList } from 'lucide-react';
 
 function Home() {
   const [greetMsg, setGreetMsg] = useState("");
@@ -11,83 +11,47 @@ function Home() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-5">
-      <div className="border-b-2 border-gray-200 dark:border-gray-700 pb-5 mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          EditArt - Sistema de Gestão
+    <div className="max-w-6xl mx-auto">
+      <div className="border-b border-primary-600 pb-4 mb-6">
+        <h1 className="text-2xl font-bold text-gradient-secondary mb-2">
+          Bem-vindo ao EditArt
         </h1>
-        <nav className="text-sm text-gray-600 dark:text-gray-400">
-          <span className="text-gray-900 dark:text-white font-medium">Início</span>
-          <span className="mx-2 text-gray-300">|</span>
-          <a 
-            href="#create-client" 
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline"
-          >
-            Cadastrar Cliente
-          </a>
-        </nav>
+        <p className="text-primary-300">
+          Sistema de gestão de clientes desenvolvido com Tauri + React
+        </p>
       </div>
 
       <main>
-        <div className="text-center max-w-4xl mx-auto">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-8">
-            Bem-vindo ao EditArt
-          </h2>
-          
-          <div className="flex justify-center gap-5 my-8">
-            <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">
-              <img 
-                src="/vite.svg" 
-                className="h-24 p-6 transition-all duration-700 hover:logo-vite" 
-                alt="Vite logo" 
-              />
-            </a>
-            <a href="https://tauri.app" target="_blank" rel="noopener noreferrer">
-              <img 
-                src="/tauri.svg" 
-                className="h-24 p-6 transition-all duration-700 hover:logo-tauri" 
-                alt="Tauri logo" 
-              />
-            </a>
-            <a href="https://react.dev" target="_blank" rel="noopener noreferrer">
-              <img 
-                src={reactLogo} 
-                className="h-24 p-6 transition-all duration-700 hover:logo-react" 
-                alt="React logo" 
-              />
-            </a>
-          </div>
-          
-          <p className="text-gray-700 dark:text-gray-300 mb-12">
-            Sistema de gestão de clientes desenvolvido com Tauri + React
-          </p>
+        <div className="text-center max-w-5xl mx-auto">
 
-          <div className="my-12">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+          <div className="my-8">
+            <h3 className="text-lg font-semibold text-primary-100 mb-4">
               Ações Rápidas
             </h3>
             <div className="flex gap-4 justify-center flex-wrap">
               <a 
-                href="#create-client" 
-                className="inline-block px-8 py-4 bg-blue-600 text-white rounded-lg font-medium text-base transition-all duration-300 hover:bg-blue-700 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
+                href="#clients" 
+                className="group inline-flex items-center gap-2 px-6 py-3 bg-secondary-500 text-primary-900 rounded-lg font-semibold hover-lift shadow-secondary hover:shadow-secondary transition-all duration-300"
               >
-                📝 Cadastrar Novo Cliente
+                <Users className="w-5 h-5" />
+                <span>Gestão de Clientes</span>
               </a>
-              <button 
-                className="inline-block px-8 py-4 bg-gray-200 text-gray-600 rounded-lg font-medium text-base opacity-60 cursor-not-allowed"
-                disabled
+              <a 
+                href="#orders" 
+                className="group inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-primary-100 rounded-lg font-semibold hover-lift shadow-teal hover:shadow-teal transition-all duration-300"
               >
-                📋 Listar Clientes
-              </button>
+                <ClipboardList className="w-5 h-5" />
+                <span>Gestão de Pedidos</span>
+              </a>
             </div>
           </div>
 
-          <div className="my-12 p-8 bg-gray-100 dark:bg-gray-800 rounded-xl">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+          <div className="my-8 p-6 glass-effect rounded-xl">
+            <h3 className="text-lg font-semibold text-primary-100 mb-4">
               Teste de Conexão
             </h3>
             <form
-              className="flex gap-3 justify-center my-5"
+              className="flex gap-3 justify-center my-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 greet();
@@ -98,17 +62,17 @@ function Home() {
                 onChange={(e) => setName(e.currentTarget.value)}
                 placeholder="Digite seu nome..."
                 value={name}
-                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input-dark px-4 py-2 rounded-lg min-w-60"
               />
               <button 
                 type="submit"
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
+                className="px-6 py-2 bg-secondary-500 text-primary-900 rounded-lg font-semibold hover-lift shadow-secondary transition-all duration-200"
               >
                 Testar
               </button>
             </form>
             {greetMsg && (
-              <p className="mt-4 inline-block px-5 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg">
+              <p className="mt-4 inline-block px-4 py-2 bg-teal-600 text-primary-100 rounded-lg font-medium shadow-teal">
                 {greetMsg}
               </p>
             )}

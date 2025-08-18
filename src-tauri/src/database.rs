@@ -55,6 +55,26 @@ pub async fn init_database() -> Result<(), String> {
     .await
     .map_err(|e| format!("Failed to migrate clients table: {}", e))?;
 
+    // Create orders table if not exists
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS orders (
+            id TEXT PRIMARY KEY,
+            client_id TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+            due_date DATE,
+            discount REAL DEFAULT 0,
+            iva REAL DEFAULT 0,
+            subtotal REAL NOT NULL,
+            total REAL NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to create orders table: {}", e))?;
+
     DB_POOL
         .set(pool)
         .map_err(|_| "Failed to set database pool".to_string())?;
