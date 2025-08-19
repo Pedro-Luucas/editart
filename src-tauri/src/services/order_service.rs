@@ -1,4 +1,5 @@
 use crate::dto::{CreateOrderDto, UpdateOrderDto, OrderResponseDto};
+use crate::models::OrderStatus;
 use crate::repositories::OrderRepository;
 use time::Date;
 
@@ -14,11 +15,20 @@ impl OrderService {
     }
 
     pub async fn create_order(&self, dto: CreateOrderDto) -> Result<OrderResponseDto, String> {
+        let status_str = match dto.status.unwrap_or_default() {
+            OrderStatus::Pending => "pending".to_string(),
+            OrderStatus::PaymentPending => "payment_pending".to_string(),
+            OrderStatus::Paid => "paid".to_string(),
+            OrderStatus::Cancelled => "cancelled".to_string(),
+        };
+        
         let order = self.repository.create(
+            dto.name,
             dto.client_id,
             dto.due_date,
             dto.iva,
             dto.discount,
+            status_str,
         ).await?;
 
         // Get the order with client info for the response
@@ -67,14 +77,23 @@ impl OrderService {
     }
 
     pub async fn update_order(&self, id: &str, dto: UpdateOrderDto) -> Result<Option<OrderResponseDto>, String> {
+        let status_str = dto.status.map(|status| match status {
+            OrderStatus::Pending => "pending".to_string(),
+            OrderStatus::PaymentPending => "payment_pending".to_string(),
+            OrderStatus::Paid => "paid".to_string(),
+            OrderStatus::Cancelled => "cancelled".to_string(),
+        });
+        
         let order = self.repository.update(
             id,
+            dto.name,
             dto.client_id,
             dto.due_date,
             dto.discount,
             dto.iva,
             dto.subtotal,
             dto.total,
+            status_str,
         ).await?;
 
         match order {

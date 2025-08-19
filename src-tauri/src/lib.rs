@@ -4,6 +4,7 @@ mod dto;
 mod repositories;
 mod services;
 mod commands;
+mod resize;
 
 use commands::*;
 use database::init_database;
@@ -41,7 +42,9 @@ pub fn run() {
             get_orders_by_date_range,
             list_orders,
             update_order,
-            delete_order
+            delete_order,
+            resize_current_window,
+            get_screen_size
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

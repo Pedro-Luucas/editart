@@ -4,10 +4,14 @@ import Home from "./pages/Home";
 import Clients from "./pages/Clients";
 import Orders from "./pages/Orders";
 import Settings from "./pages/Settings";
+import { useAutoResize } from "./hooks/useResponsiveWindow";
 import "./App.css";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("home");
+  
+  // Auto-resize window on app startup using responsive configuration
+  useAutoResize('sidebar', true); // Uses the 'sidebar' preset config
 
   // Simple routing based on hash
   const getCurrentPage = () => {
