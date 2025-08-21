@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Search, X, User, Phone, FileText, Tag } from 'lucide-react';
+import { Button } from "./button";
 import { Client } from "../../types/client";
 
 interface ClientSelectModalProps {
@@ -71,12 +72,14 @@ export default function ClientSelectModal({
             <User className="w-5 h-5 text-secondary-400" />
             Selecionar Cliente
           </h2>
-          <button
+          <Button
             onClick={onClose}
-            className="p-2 text-primary-400 hover:text-primary-200 hover:bg-primary-700 rounded-lg transition-colors"
+            variant="ghost"
+            size="icon"
+            className="p-2 text-primary-400 hover:text-primary-200 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Search */}
@@ -105,12 +108,13 @@ export default function ClientSelectModal({
                 <X className="w-4 h-4" />
                 Erro: {error}
               </p>
-              <button
+              <Button
                 onClick={loadClients}
-                className="mt-2 px-4 py-2 bg-red-700 text-red-100 rounded-lg font-medium hover:bg-red-600 transition-colors"
+                variant="destructive"
+                className="mt-2 px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 Tentar Novamente
-              </button>
+              </Button>
             </div>
           )}
 
@@ -131,12 +135,12 @@ export default function ClientSelectModal({
                     : "Nenhum cliente cadastrado ainda."}
                 </p>
                 {searchTerm && (
-                  <button
+                  <Button
                     onClick={() => setSearchTerm("")}
-                    className="mt-4 px-6 py-2 bg-olive-600 text-primary-100 rounded-lg font-medium hover-lift shadow-olive transition-all"
+                    className="mt-4 px-6 py-2 rounded-lg font-medium hover-lift transition-all"
                   >
                     Limpar Busca
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -205,12 +209,13 @@ export default function ClientSelectModal({
         {/* Footer */}
         <div className="p-6 border-t border-primary-600">
           <div className="flex justify-end gap-3">
-            <button
+            <Button
               onClick={onClose}
+              variant="ghost"
               className="px-6 py-2 text-primary-300 hover:text-primary-100 font-medium transition-colors"
             >
               Cancelar
-            </button>
+            </Button>
           </div>
         </div>
       </div>

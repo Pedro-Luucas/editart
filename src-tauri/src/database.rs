@@ -140,6 +140,109 @@ pub async fn init_database() -> Result<(), String> {
     .await
     .map_err(|e| format!("Failed to migrate orders table column types: {}", e))?;
 
+    // Create users table if not exists
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            login TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to create users table: {}", e))?;
+
+    // Create clothes table if not exists
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS clothes (
+            id TEXT PRIMARY KEY,
+            order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+            clothing_type TEXT NOT NULL,
+            custom_type TEXT,
+            unit_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+            sizes TEXT NOT NULL, -- JSON string: {"S": 2, "M": 5, "L": 3}
+            color TEXT NOT NULL,
+            total_quantity INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to create clothes table: {}", e))?;
+
+    // Create clothing_services table if not exists
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS clothing_services (
+            id TEXT PRIMARY KEY,
+            clothes_id TEXT NOT NULL REFERENCES clothes(id) ON DELETE CASCADE,
+            service_type TEXT NOT NULL,
+            location TEXT NOT NULL,
+            unit_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to create clothing_services table: {}", e))?;
+
+    // Insert default users if table is empty
+    let user_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
+        .fetch_one(&pool)
+        .await
+        .map_err(|e| format!("Failed to count users: {}", e))?;
+
+    if user_count == 0 {
+        // Insert default admin user
+        let admin_id = uuid::Uuid::new_v4().to_string();
+        let now = time::OffsetDateTime::now_utc();
+        
+        sqlx::query(
+            r#"
+            INSERT INTO users (id, login, password, role, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            "#,
+        )
+        .bind(&admin_id)
+        .bind("admin")
+        .bind("admin123")
+        .bind("admin")
+        .bind(now)
+        .bind(now)
+        .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to create admin user: {}", e))?;
+
+        // Insert default user
+        let user_id = uuid::Uuid::new_v4().to_string();
+        
+        sqlx::query(
+            r#"
+            INSERT INTO users (id, login, password, role, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            "#,
+        )
+        .bind(&user_id)
+        .bind("user")
+        .bind("user123")
+        .bind("user")
+        .bind(now)
+        .bind(now)
+        .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to create default user: {}", e))?;
+    }
+
     DB_POOL
         .set(pool)
         .map_err(|_| "Failed to set database pool".to_string())?;

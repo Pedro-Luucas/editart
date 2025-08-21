@@ -1,6 +1,16 @@
-import { Settings as SettingsIcon, Database, Wrench, Palette, BarChart3, Save, RefreshCw, FileText } from 'lucide-react';
+import { Settings as SettingsIcon, Database, Wrench, Palette, BarChart3, Save, RefreshCw, FileText, UserPlus } from 'lucide-react';
+import { Button } from '../components/ui/button';
 
-export default function Settings() {
+interface SettingsProps {
+  user?: {
+    id: string;
+    login: string;
+    role: string;
+  };
+  onNavigate?: (page: string) => void;
+}
+
+export default function Settings({ user, onNavigate }: SettingsProps) {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="border-b border-primary-600 pb-4 mb-6">
@@ -119,6 +129,31 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Seção Administração - Apenas para Admin */}
+        {user?.role === "admin" && (
+          <div className="glass-effect p-6 rounded-xl border-l-4 border-l-amber-500">
+            <h2 className="text-lg font-bold text-primary-100 mb-4 flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-amber-400" />
+              Administração
+            </h2>
+            <p className="text-primary-400 text-sm mb-4">
+              Funcionalidades exclusivas para administradores
+            </p>
+            
+            <div className="flex flex-wrap gap-4">
+              <Button 
+                onClick={() => onNavigate?.("register-user")}
+                className="px-6 py-3 rounded-xl font-medium hover-lift transition-all"
+              >
+                <span className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Cadastrar Usuário
+                </span>
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Ações */}
         <div className="glass-effect p-6 rounded-xl">
           <h2 className="text-lg font-bold text-primary-100 mb-4 flex items-center gap-2">
@@ -127,26 +162,26 @@ export default function Settings() {
           </h2>
           
           <div className="flex flex-wrap gap-4">
-            <button className="px-6 py-3 bg-teal-600 text-primary-100 rounded-xl font-medium hover-lift shadow-teal transition-all">
+            <Button className="px-6 py-3 rounded-xl font-medium hover-lift transition-all">
               <span className="flex items-center gap-2">
                 <Save className="w-4 h-4" />
                 Fazer Backup
               </span>
-            </button>
+            </Button>
             
-            <button className="px-6 py-3 bg-olive-600 text-primary-100 rounded-xl font-medium hover-lift shadow-olive transition-all">
+            <Button className="px-6 py-3 rounded-xl font-medium hover-lift transition-all">
               <span className="flex items-center gap-2">
                 <RefreshCw className="w-4 h-4" />
                 Sincronizar Dados
               </span>
-            </button>
+            </Button>
             
-            <button className="px-6 py-3 bg-primary-700 text-primary-300 rounded-xl font-medium hover:bg-primary-600 transition-all border border-primary-600">
+            <Button variant="outline" className="px-6 py-3 text-primary-300 rounded-xl font-medium transition-all">
               <span className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Exportar Relatório
               </span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

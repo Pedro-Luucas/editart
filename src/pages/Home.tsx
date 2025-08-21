@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Users, ClipboardList } from 'lucide-react';
+import { Button } from "../components/ui/button";
 
 function Home() {
   const [greetMsg, setGreetMsg] = useState("");
@@ -64,12 +65,12 @@ function Home() {
                 value={name}
                 className="input-dark px-4 py-2 rounded-lg min-w-60"
               />
-              <button 
+              <Button 
                 type="submit"
-                className="px-6 py-2 bg-secondary-500 text-primary-900 rounded-lg font-semibold hover-lift shadow-secondary transition-all duration-200"
+                className="px-6 py-2 rounded-lg font-semibold hover-lift transition-all duration-200"
               >
                 Testar
-              </button>
+              </Button>
             </form>
             {greetMsg && (
               <p className="mt-4 inline-block px-4 py-2 bg-teal-600 text-primary-100 rounded-lg font-medium shadow-teal">

@@ -6,9 +6,15 @@ interface LayoutProps {
   children: ReactNode;
   currentPage: string;
   onNavigate: (page: string) => void;
+  user: {
+    id: string;
+    login: string;
+    role: string;
+  };
+  onLogout: () => void;
 }
 
-export default function Layout({ children, currentPage, onNavigate }: LayoutProps) {
+export default function Layout({ children, currentPage, onNavigate, user, onLogout }: LayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleSidebarToggle = () => {
@@ -26,7 +32,11 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
       />
       
       {/* TopBar */}
-      <TopBar sidebarCollapsed={sidebarCollapsed} />
+      <TopBar 
+        sidebarCollapsed={sidebarCollapsed} 
+        user={user}
+        onLogout={onLogout}
+      />
       
       {/* Main Content */}
       <main className={`transition-all duration-300 pt-12 ${

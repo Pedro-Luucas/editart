@@ -1,80 +1,131 @@
 /**
- * Formata uma data TIMESTAMPTZ do banco de dados para exibição
- * @param dateString - String no formato "2025-08-15 19:54:24.059309-03"
- * @returns String formatada como "15/08/2025 19:54"
+ * Funções utilitárias para formatação de datas
  */
-export function formatDateTime(dateString: string): string {
-  try {
-    // Remove os microssegundos e converte para um formato que o Date pode processar
-    const cleanDateString = dateString.replace(/(\.\d{6})([+-]\d{2})$/, '$2:00');
-    
-    const date = new Date(cleanDateString);
-    
-    if (isNaN(date.getTime())) {
-      return 'Data inválida';
-    }
-    
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Sao_Paulo'
-    });
-  } catch (error) {
-    console.error('Erro ao formatar data:', error);
-    return 'Data inválida';
-  }
-}
 
 /**
- * Formata apenas a data (sem horário) de uma string TIMESTAMPTZ
- * @param dateString - String no formato "2025-08-15 19:54:24.059309-03"
- * @returns String formatada como "15/08/2025"
+ * Formata uma data/hora completa para o formato brasileiro
+ * @param dateString - String da data no formato ISO 8601/RFC3339 ou similar
+ * @returns Data formatada como "dd/mm/yyyy HH:mm"
  */
-export function formatDate(dateString: string): string {
+export function formatDateTime(dateString: string): string {
+  if (!dateString) {
+    console.warn('formatDateTime: dateString is empty or null');
+    return "Data inválida";
+  }
+  
   try {
-    const cleanDateString = dateString.replace(/(\.\d{6})([+-]\d{2})$/, '$2:00');
-    const date = new Date(cleanDateString);
+    // Tenta criar a data de várias formas
+    let date: Date;
     
+    // Se já é uma string ISO válida, usa diretamente
+    if (dateString.includes('T') || dateString.includes('Z') || dateString.match(/[+-]\d{2}:\d{2}$/)) {
+      date = new Date(dateString);
+    } else {
+      // Tenta formatos alternativos
+      date = new Date(dateString);
+    }
+    
+    // Verifica se a data é válida
     if (isNaN(date.getTime())) {
-      return 'Data inválida';
+      console.warn('formatDateTime: Invalid date string:', dateString);
+      return "Data inválida";
     }
     
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      timeZone: 'America/Sao_Paulo'
+      hour: '2-digit',
+      minute: '2-digit'
     });
   } catch (error) {
-    console.error('Erro ao formatar data:', error);
-    return 'Data inválida';
+    console.error('Erro ao formatar data:', error, 'Input:', dateString);
+    return "Data inválida";
   }
 }
 
 /**
- * Formata apenas o horário de uma string TIMESTAMPTZ
- * @param dateString - String no formato "2025-08-15 19:54:24.059309-03"
- * @returns String formatada como "19:54"
+ * Formata apenas a data (sem hora) para o formato brasileiro
+ * @param dateString - String da data no formato ISO 8601/RFC3339 ou similar
+ * @returns Data formatada como "dd/mm/yyyy"
  */
-export function formatTime(dateString: string): string {
+export function formatDateOnly(dateString: string): string {
+  if (!dateString) {
+    console.warn('formatDateOnly: dateString is empty or null');
+    return "Data inválida";
+  }
+  
   try {
-    const cleanDateString = dateString.replace(/(\.\d{6})([+-]\d{2})$/, '$2:00');
-    const date = new Date(cleanDateString);
+    // Tenta criar a data de várias formas
+    let date: Date;
     
-    if (isNaN(date.getTime())) {
-      return 'Horário inválido';
+    // Se já é uma string ISO válida, usa diretamente
+    if (dateString.includes('T') || dateString.includes('Z') || dateString.match(/[+-]\d{2}:\d{2}$/)) {
+      date = new Date(dateString);
+    } else {
+      // Tenta formatos alternativos
+      date = new Date(dateString);
     }
     
-    return date.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Sao_Paulo'
+    // Verifica se a data é válida
+    if (isNaN(date.getTime())) {
+      console.warn('formatDateOnly: Invalid date string:', dateString);
+      return "Data inválida";
+    }
+    
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
   } catch (error) {
-    console.error('Erro ao formatar horário:', error);
-    return 'Horário inválido';
+    console.error('Erro ao formatar data:', error, 'Input:', dateString);
+    return "Data inválida";
+  }
+}
+
+/**
+ * Formata uma data para o formato de input HTML (yyyy-mm-dd)
+ * @param dateString - String da data no formato ISO 8601 ou similar
+ * @returns Data formatada como "yyyy-mm-dd"
+ */
+export function formatDateForInput(dateString: string): string {
+  if (!dateString) return "";
+  
+  try {
+    const date = new Date(dateString);
+    
+    // Verifica se a data é válida
+    if (isNaN(date.getTime())) {
+      return "";
+    }
+    
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    console.error('Erro ao formatar data para input:', error);
+    return "";
+  }
+}
+
+/**
+ * Converte uma data do formato de input HTML (yyyy-mm-dd) para o formato esperado pelo backend
+ * @param inputDate - Data no formato "yyyy-mm-dd"
+ * @returns Data no formato ISO 8601 ou string vazia se inválida
+ */
+export function convertInputDateToBackend(inputDate: string): string {
+  if (!inputDate) return "";
+  
+  try {
+    const date = new Date(inputDate + 'T00:00:00Z');
+    
+    // Verifica se a data é válida
+    if (isNaN(date.getTime())) {
+      return "";
+    }
+    
+    return date.toISOString();
+  } catch (error) {
+    console.error('Erro ao converter data para backend:', error);
+    return "";
   }
 }

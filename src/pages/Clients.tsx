@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { RotateCcw, Plus, Edit, Copy, Trash2, UserPlus, X } from 'lucide-react';
+import { Button } from "../components/ui/button";
 import SidePanel from "../components/ui/SidePanel";
-import { formatDateTime } from "../utils/dateUtils";
+import { formatDateOnly } from "../utils/dateUtils.ts";
 import { Client } from "../types/client";
 
 interface CreateClientDto {
@@ -44,6 +45,15 @@ export default function Clients() {
       setLoading(true);
       setError("");
       const result = await invoke<Client[]>("list_clients");
+      
+      // Debug: log para ver formato das datas
+      console.log("Clientes recebidos do backend:", result);
+      if (result.length > 0) {
+        console.log("Exemplo de client:", result[0]);
+        console.log("created_at tipo:", typeof result[0].created_at, "valor:", result[0].created_at);
+        console.log("updated_at tipo:", typeof result[0].updated_at, "valor:", result[0].updated_at);
+      }
+      
       setClients(result);
     } catch (err) {
       console.error("Erro ao carregar clientes:", err);
@@ -168,25 +178,26 @@ export default function Clients() {
           />
         </div>
         <div className="flex gap-3">
-          <button
+          <Button
             onClick={loadClients}
             disabled={loading}
-            className="px-4 py-2 bg-teal-600 text-primary-100 rounded-lg font-medium hover-lift shadow-teal disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            variant="secondary"
+            className="px-4 py-2 rounded-lg font-medium hover-lift disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             <span className="flex items-center gap-2">
               <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Carregando...' : 'Atualizar'}
             </span>
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => handleOpenPanel()}
-            className="px-4 py-2 bg-secondary-500 text-primary-900 rounded-lg font-medium hover-lift shadow-secondary"
+            className="px-4 py-2 rounded-lg font-medium hover-lift"
           >
             <span className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Novo Cliente
             </span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -211,12 +222,13 @@ export default function Clients() {
             <X className="w-5 h-5" />
             Erro: {error}
           </p>
-          <button
+          <Button
             onClick={loadClients}
-            className="px-6 py-3 bg-red-700 text-red-100 rounded-lg font-medium hover:bg-red-600 hover-lift transition-all"
+            variant="destructive"
+            className="px-6 py-3 rounded-lg font-medium hover-lift transition-all"
           >
             Tentar Novamente
-          </button>
+          </Button>
         </div>
       )}
 
@@ -233,21 +245,21 @@ export default function Clients() {
               : "Nenhum cliente cadastrado ainda."}
           </p>
           {!searchTerm && (
-                      <button
+                      <Button
             onClick={() => handleOpenPanel()}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-secondary-500 text-primary-900 rounded-xl font-semibold text-lg hover-lift shadow-secondary transition-all duration-200"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg hover-lift transition-all duration-200"
           >
             <UserPlus className="w-5 h-5" />
             Cadastrar Primeiro Cliente
-          </button>
+          </Button>
           )}
           {searchTerm && (
-            <button
+            <Button
               onClick={() => setSearchTerm("")}
-              className="inline-block px-8 py-4 bg-olive-600 text-primary-100 rounded-xl font-semibold text-lg hover-lift shadow-olive transition-all duration-200"
+              className="inline-block px-8 py-4 rounded-xl font-semibold text-lg hover-lift transition-all duration-200"
             >
               Limpar Busca
-            </button>
+            </Button>
           )}
         </div>
       ) : (
@@ -293,40 +305,41 @@ export default function Clients() {
                   <div className="flex flex-wrap gap-4 text-xs text-primary-400 border-t border-primary-600 pt-3">
                     <div>
                       <span className="text-primary-500 font-medium">Criado:</span>{" "}
-                      <span className="text-primary-300">{formatDateTime(client.created_at)}</span>
+                      <span className="text-primary-300">{formatDateOnly(client.created_at)}</span>
                     </div>
                     <div>
                       <span className="text-primary-500 font-medium">Atualizado:</span>{" "}
-                      <span className="text-primary-300">{formatDateTime(client.updated_at)}</span>
+                      <span className="text-primary-300">{formatDateOnly(client.updated_at)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <button
+                  <Button
                     onClick={() => handleOpenPanel(client)}
-                    className="flex items-center gap-2 px-4 py-2 bg-secondary-600 text-primary-900 rounded-lg font-medium hover-lift shadow-secondary transition-all text-sm"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
                     title="Editar cliente"
                   >
                     <Edit className="w-4 h-4" />
                     Editar
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => navigator.clipboard.writeText(client.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-olive-600 text-primary-100 rounded-lg font-medium hover-lift shadow-olive transition-all text-sm"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
                     title="Copiar ID"
                   >
                     <Copy className="w-4 h-4" />
                     ID
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleDeleteClient(client.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-700 text-red-100 rounded-lg font-medium hover:bg-red-600 hover-lift transition-all text-sm"
+                    variant="destructive"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
                     title="Excluir cliente"
                   >
                     <Trash2 className="w-4 h-4" />
                     Excluir
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

@@ -37,7 +37,9 @@ pub struct OrderResponseDto {
     pub subtotal: f64,
     pub total: f64,
     pub status: OrderStatus,
+    #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
 }
 

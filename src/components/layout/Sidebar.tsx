@@ -1,4 +1,5 @@
 import { Home, ClipboardList, Users, Settings, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
+import { Button } from '../ui/button';
 
 interface SidebarProps {
   currentPage: string;
@@ -51,8 +52,9 @@ export default function Sidebar({ currentPage, onNavigate, isCollapsed, onToggle
       <div className="flex flex-col h-full">
         {/* Toggle Button */}
         <div className="p-3 border-b border-primary-700">
-          <button
+          <Button
             onClick={onToggleCollapse}
+            variant="ghost"
             className="w-full flex items-center justify-center p-1.5 rounded-lg bg-primary-800 hover:bg-primary-700 transition-colors"
             title={isCollapsed ? "Expandir menu" : "Recolher menu"}
           >
@@ -61,7 +63,7 @@ export default function Sidebar({ currentPage, onNavigate, isCollapsed, onToggle
             ) : (
               <ChevronLeft className="text-primary-300 w-4 h-4" />
             )}
-          </button>
+          </Button>
         </div>
 
         {/* Navigation Menu */}
@@ -71,12 +73,11 @@ export default function Sidebar({ currentPage, onNavigate, isCollapsed, onToggle
               const IconComponent = item.icon;
               return (
                 <li key={item.id}>
-                  <button
+                  <Button
                     onClick={() => handleItemClick(item.path)}
+                    variant={isActive(item.path) ? "default" : "ghost"}
                     className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg font-medium transition-all duration-200 group ${
-                      isActive(item.path)
-                        ? "bg-secondary-500 text-primary-900 shadow-secondary"
-                        : "text-primary-300 hover:bg-primary-800 hover:text-primary-100"
+                      !isActive(item.path) ? "text-primary-300 hover:bg-primary-800 hover:text-primary-100" : ""
                     }`}
                     title={isCollapsed ? item.label : ""}
                   >
@@ -84,7 +85,7 @@ export default function Sidebar({ currentPage, onNavigate, isCollapsed, onToggle
                     {!isCollapsed && (
                       <span className="flex-1 text-left text-sm">{item.label}</span>
                     )}
-                  </button>
+                  </Button>
                 </li>
               );
             })}

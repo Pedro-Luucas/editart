@@ -30,7 +30,9 @@ pub struct ClientResponseDto {
     pub category: String,
     pub requisition: String,
     pub observations: String,
+    #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
 }
 

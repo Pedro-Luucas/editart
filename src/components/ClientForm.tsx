@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Button } from "./ui/button";
 
 interface CreateClientDto {
   name: string;
@@ -156,10 +157,10 @@ export default function ClientForm() {
           />
         </div>
 
-        <button 
+        <Button 
           type="submit" 
           disabled={isLoading} 
-          className="w-full py-3 bg-secondary-500 text-primary-900 rounded-lg font-semibold hover-lift shadow-secondary disabled:bg-primary-600 disabled:text-primary-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all"
+          className="w-full py-3 rounded-lg font-semibold hover-lift disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
@@ -172,7 +173,7 @@ export default function ClientForm() {
               Cadastrar Cliente
             </span>
           )}
-        </button>
+        </Button>
       </form>
 
       {message && (
