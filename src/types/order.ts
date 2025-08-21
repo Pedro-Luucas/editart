@@ -1,4 +1,4 @@
-export type OrderStatus = 'pending' | 'payment_pending' | 'paid' | 'cancelled';
+export type OrderStatus = 'order_received' | 'in_production' | 'ready_for_delivery' | 'delivered';
 
 export interface Order {
   id: string;
@@ -12,6 +12,7 @@ export interface Order {
   subtotal: number;
   total: number;
   status: OrderStatus;
+  paid: boolean;
   created_at: string; // TIMESTAMPTZ como string
   updated_at: string; // TIMESTAMPTZ como string
 }
@@ -23,6 +24,7 @@ export interface CreateOrderDto {
   iva: number;
   discount?: number;
   status?: OrderStatus;
+  paid?: boolean;
 }
 
 export interface UpdateOrderDto {
@@ -34,18 +36,19 @@ export interface UpdateOrderDto {
   subtotal?: number;
   total?: number;
   status?: OrderStatus;
+  paid?: boolean;
 }
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: 'Pendente',
-  payment_pending: 'Aguardando Pagamento',
-  paid: 'Pago',
-  cancelled: 'Cancelado',
+  order_received: 'Pedido Recebido',
+  in_production: 'Pedido na Produção',
+  ready_for_delivery: 'Pedido Pronto pra Entrega',
+  delivered: 'Pedido Entregue',
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: 'bg-yellow-600',
-  payment_pending: 'bg-orange-600',
-  paid: 'bg-green-600',
-  cancelled: 'bg-red-600',
+  order_received: 'bg-blue-600',
+  in_production: 'bg-orange-600',
+  ready_for_delivery: 'bg-yellow-600',
+  delivered: 'bg-green-600',
 };

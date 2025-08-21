@@ -10,6 +10,7 @@ pub struct CreateOrderDto {
     pub iva: f64,
     pub discount: Option<f64>,
     pub status: Option<OrderStatus>,
+    pub paid: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +23,7 @@ pub struct UpdateOrderDto {
     pub subtotal: Option<f64>,
     pub total: Option<f64>,
     pub status: Option<OrderStatus>,
+    pub paid: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,6 +39,7 @@ pub struct OrderResponseDto {
     pub subtotal: f64,
     pub total: f64,
     pub status: OrderStatus,
+    pub paid: bool,
     #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
@@ -46,10 +49,10 @@ pub struct OrderResponseDto {
 impl From<(crate::models::Order, String, String)> for OrderResponseDto {
     fn from((order, client_name, client_contact): (crate::models::Order, String, String)) -> Self {
         let status = match order.status.as_str() {
-            "payment_pending" => OrderStatus::PaymentPending,
-            "paid" => OrderStatus::Paid,
-            "cancelled" => OrderStatus::Cancelled,
-            _ => OrderStatus::Pending,
+            "in_production" => OrderStatus::InProduction,
+            "ready_for_delivery" => OrderStatus::ReadyForDelivery,
+            "delivered" => OrderStatus::Delivered,
+            _ => OrderStatus::OrderReceived,
         };
         
         Self {
@@ -64,6 +67,7 @@ impl From<(crate::models::Order, String, String)> for OrderResponseDto {
             subtotal: order.subtotal,
             total: order.total,
             status,
+            paid: order.paid,
             created_at: order.created_at,
             updated_at: order.updated_at,
         }

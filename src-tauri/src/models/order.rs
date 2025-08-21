@@ -4,19 +4,19 @@ use time::{Date, OffsetDateTime};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrderStatus {
-    #[serde(rename = "pending")]
-    Pending,
-    #[serde(rename = "payment_pending")]
-    PaymentPending,
-    #[serde(rename = "paid")]
-    Paid,
-    #[serde(rename = "cancelled")]
-    Cancelled,
+    #[serde(rename = "order_received")]
+    OrderReceived,
+    #[serde(rename = "in_production")]
+    InProduction,
+    #[serde(rename = "ready_for_delivery")]
+    ReadyForDelivery,
+    #[serde(rename = "delivered")]
+    Delivered,
 }
 
 impl Default for OrderStatus {
     fn default() -> Self {
-        OrderStatus::Pending
+        OrderStatus::OrderReceived
     }
 }
 
@@ -31,6 +31,7 @@ pub struct Order {
     pub subtotal: f64,
     pub total: f64,
     pub status: String, // Will be converted to/from OrderStatus in DTOs
+    pub paid: bool,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
 }

@@ -6,11 +6,12 @@ use uuid::Uuid;
 pub struct OrderRepository;
 
 impl OrderRepository {
-    pub async fn create(&self, name: String, client_id: String, due_date: Date, iva: f64, discount: Option<f64>, status: String) -> Result<Order, String> {
+    pub async fn create(&self, name: String, client_id: String, due_date: Date, iva: f64, discount: Option<f64>, status: String, paid: Option<bool>) -> Result<Order, String> {
         let pool = get_db_pool()?;
         let id = Uuid::new_v4().to_string();
         let now = OffsetDateTime::now_utc();
         let discount_value = discount.unwrap_or(0.0);
+        let paid_value = paid.unwrap_or(false);
 
         // Validate that client exists
         let client_exists = sqlx::query_scalar::<_, bool>(
@@ -27,8 +28,8 @@ impl OrderRepository {
 
         let order = sqlx::query_as::<_, Order>(
             r#"
-            INSERT INTO orders (id, name, client_id, due_date, discount, iva, subtotal, total, status, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO orders (id, name, client_id, due_date, discount, iva, subtotal, total, status, paid, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING *
             "#,
         )
@@ -41,6 +42,7 @@ impl OrderRepository {
         .bind(0.0) // subtotal starts at 0
         .bind(0.0) // total starts at 0
         .bind(&status)
+        .bind(paid_value)
         .bind(now)
         .bind(now)
         .fetch_one(pool)
@@ -106,7 +108,7 @@ impl OrderRepository {
         Ok(orders)
     }
 
-    pub async fn update(&self, id: &str, name: Option<String>, client_id: Option<String>, due_date: Option<Date>, discount: Option<f64>, iva: Option<f64>, subtotal: Option<f64>, total: Option<f64>, status: Option<String>) -> Result<Option<Order>, String> {
+    pub async fn update(&self, id: &str, name: Option<String>, client_id: Option<String>, due_date: Option<Date>, discount: Option<f64>, iva: Option<f64>, subtotal: Option<f64>, total: Option<f64>, status: Option<String>, paid: Option<bool>) -> Result<Option<Order>, String> {
         let pool = get_db_pool()?;
         let now = OffsetDateTime::now_utc();
 
@@ -126,6 +128,7 @@ impl OrderRepository {
         let updated_subtotal = subtotal.unwrap_or(current_order.subtotal);
         let updated_total = total.unwrap_or(current_order.total);
         let updated_status = status.unwrap_or(current_order.status);
+        let updated_paid = paid.unwrap_or(current_order.paid);
 
         // Validate that client exists if client_id is being updated
         if client_id.is_some() {
@@ -145,7 +148,7 @@ impl OrderRepository {
         let order = sqlx::query_as::<_, Order>(
             r#"
             UPDATE orders 
-            SET name = $2, client_id = $3, due_date = $4, discount = $5, iva = $6, subtotal = $7, total = $8, status = $9, updated_at = $10
+            SET name = $2, client_id = $3, due_date = $4, discount = $5, iva = $6, subtotal = $7, total = $8, status = $9, paid = $10, updated_at = $11
             WHERE id = $1
             RETURNING *
             "#,
@@ -159,6 +162,7 @@ impl OrderRepository {
         .bind(updated_subtotal)
         .bind(updated_total)
         .bind(updated_status)
+        .bind(updated_paid)
         .bind(now)
         .fetch_optional(pool)
         .await

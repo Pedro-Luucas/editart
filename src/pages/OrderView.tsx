@@ -122,10 +122,10 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
     const label = ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS];
     
     const iconMap = {
-      pending: <Clock className="w-4 h-4" />,
-      payment_pending: <AlertCircle className="w-4 h-4" />,
-      paid: <CheckCircle className="w-4 h-4" />,
-      cancelled: <XCircle className="w-4 h-4" />
+      order_received: <Clock className="w-4 h-4" />,
+      in_production: <AlertCircle className="w-4 h-4" />,
+      ready_for_delivery: <CheckCircle className="w-4 h-4" />,
+      delivered: <CheckCircle className="w-4 h-4" />
     };
 
     const icon = iconMap[status as keyof typeof iconMap];

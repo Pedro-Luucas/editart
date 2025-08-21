@@ -3,22 +3,19 @@ import { invoke } from "@tauri-apps/api/core";
 import { 
   RotateCcw, 
   Plus, 
-  Edit, 
-  Copy, 
   Trash2, 
   FileText, 
   X, 
-  Calendar,
   User,
-  Shirt,
-  Eye
+  Shirt
 } from 'lucide-react';
 import { Button } from "../components/ui/button";
 import SidePanel from "../components/ui/SidePanel";
 import ClientSelectModal from "../components/ui/ClientSelectModal";
 import ClothesModal from "../components/ui/ClothesModal";
-import { formatDateTime, formatDateOnly } from "../utils/dateUtils.ts";
-import { Order, CreateOrderDto, UpdateOrderDto, OrderStatus, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "../types/order";
+import OrderCard from "../components/ui/OrderCard";
+
+import { Order, CreateOrderDto, UpdateOrderDto, OrderStatus } from "../types/order";
 import { Client } from "../types/client";
 import { Clothes } from "../types/clothes";
 
@@ -65,7 +62,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     due_date: "",
     iva: 16, // Default IVA 16%
     discount: 0,
-    status: "pending" as OrderStatus,
+    status: "order_received" as OrderStatus,
   });
 
   useEffect(() => {
@@ -212,7 +209,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
           due_date: "",
           iva: 16,
           discount: 0,
-          status: "pending" as OrderStatus,
+          status: "order_received" as OrderStatus,
         });
         setSelectedClient(null);
         setOrderClothes([]);
@@ -226,7 +223,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
           due_date: "",
           iva: 16,
           discount: 0,
-          status: "pending" as OrderStatus,
+          status: "order_received" as OrderStatus,
         });
         setSelectedClient(null);
         setOrderClothes([]);
@@ -255,7 +252,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       due_date: "",
       iva: 16,
       discount: 0,
-      status: "pending" as OrderStatus,
+      status: "order_received" as OrderStatus,
     });
   };
 
@@ -345,12 +342,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     return matchesSearch && matchesStatus;
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-MZ', {
-      style: 'currency',
-      currency: 'MZN'
-    }).format(value);
-  };
+
 
   const handleOpenClothesModal = async (orderId: string) => {
     console.log("🔵 handleOpenClothesModal chamado com orderId:", orderId);
@@ -489,7 +481,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
         due_date: `${year}-${month}-${day}`, // YYYY-MM-DD format
         iva: 16.0, // Ensure it's a float
         discount: 0.0, // Ensure it's a float
-        status: "pending",
+        status: "order_received",
       };
 
       console.log("🟨 Dados da order temporária:", tempOrderData);
@@ -612,16 +604,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
 
 
 
-  const getStatusBadge = (status: OrderStatus) => {
-    const colorClass = ORDER_STATUS_COLORS[status];
-    const label = ORDER_STATUS_LABELS[status];
-    
-    return (
-      <span className={`inline-block px-3 py-1 ${colorClass} text-primary-100 rounded-full text-sm font-semibold shadow-sm`}>
-        {label}
-      </span>
-    );
-  };
+
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -654,10 +637,10 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
               className="input-dark px-4 py-2 rounded-lg"
             >
               <option value="all">Todos os Status</option>
-              <option value="pending">Pendente</option>
-              <option value="payment_pending">Aguardando Pagamento</option>
-              <option value="paid">Pago</option>
-              <option value="cancelled">Cancelado</option>
+              <option value="order_received">Pedido Recebido</option>
+              <option value="in_production">Pedido na Produção</option>
+              <option value="ready_for_delivery">Pedido Pronto pra Entrega</option>
+              <option value="delivered">Pedido Entregue</option>
             </select>
             <Button
               onClick={loadOrders}
@@ -751,113 +734,18 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredOrders.map((order) => (
-            <div key={order.id} className="glass-effect p-5 rounded-xl hover-lift">
-              <div className="space-y-4">
-                {/* Header com status */}
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-bold text-primary-100 mb-1">
-                      {order.name}
-                    </h3>
-                    <p className="text-primary-400 text-sm flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {order.client_name} - {order.client_contact}
-                    </p>
-                  </div>
-                  {getStatusBadge(order.status)}
-                </div>
-
-                {/* Valores */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-primary-400 text-sm">Valor Total:</span>
-                    <span className="text-xl font-bold text-secondary-400">
-                      {formatCurrency(order.total)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-primary-400">Subtotal:</span>
-                    <span className="text-primary-200">{formatCurrency(order.subtotal)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-primary-400">IVA ({order.iva}%):</span>
-                    <span className="text-primary-200">{formatCurrency(order.subtotal * order.iva / 100)}</span>
-                  </div>
-                  
-                  {order.discount > 0 && (
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-primary-400">Desconto:</span>
-                      <span className="text-green-400">-{formatCurrency(order.discount)}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Data de vencimento */}
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-primary-400" />
-                  <span className="text-primary-400">Vencimento:</span>
-                  <span className="text-primary-200">{formatDateOnly(order.due_date)}</span>
-                </div>
-
-                {/* Timestamps */}
-                <div className="border-t border-primary-600 pt-3 space-y-1 text-xs text-primary-400">
-                  <div>
-                    <span className="text-primary-500 font-medium">Criado:</span>{" "}
-                    <span className="text-primary-300">{formatDateTime(order.created_at)}</span>
-                  </div>
-                  <div>
-                    <span className="text-primary-500 font-medium">ID:</span>{" "}
-                    <span className="text-primary-300 font-mono">{order.id.slice(0, 8)}...</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    onClick={() => handleViewOrder(order.id)}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm bg-blue-600 hover:bg-blue-700"
-                    title="Visualizar pedido"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Visualizar
-                  </Button>
-                  <Button
-                    onClick={() => handleOpenPanel(order)}
-                    className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
-                    title="Editar pedido"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      console.log("🟡 Botão de roupas clicado no card, order.id:", order.id);
-                      handleOpenClothesModal(order.id);
-                    }}
-                    className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm bg-green-600 hover:bg-green-700"
-                    title="Adicionar roupas"
-                  >
-                    <Shirt className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    onClick={() => navigator.clipboard.writeText(order.id)}
-                    className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
-                    title="Copiar ID"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    onClick={() => handleDeleteOrder(order.id)}
-                    variant="destructive"
-                    className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
-                    title="Excluir pedido"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <OrderCard
+              key={order.id}
+              order={order}
+              onView={handleViewOrder}
+              onEdit={handleOpenPanel}
+              onDelete={handleDeleteOrder}
+              onAddClothes={(orderId) => {
+                console.log("🟡 Botão de roupas clicado no card, order.id:", orderId);
+                handleOpenClothesModal(orderId);
+              }}
+              onCopyId={(orderId) => navigator.clipboard.writeText(orderId)}
+            />
           ))}
         </div>
       )}
@@ -1001,10 +889,10 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
               required
               className="input-dark w-full px-4 py-2 rounded-lg"
             >
-              <option value="pending">Pendente</option>
-              <option value="payment_pending">Aguardando Pagamento</option>
-              <option value="paid">Pago</option>
-              <option value="cancelled">Cancelado</option>
+              <option value="order_received">Pedido Recebido</option>
+              <option value="in_production">Pedido na Produção</option>
+              <option value="ready_for_delivery">Pedido Pronto pra Entrega</option>
+              <option value="delivered">Pedido Entregue</option>
             </select>
           </div>
 

@@ -67,7 +67,8 @@ pub async fn init_database() -> Result<(), String> {
             iva DOUBLE PRECISION DEFAULT 0,
             subtotal DOUBLE PRECISION NOT NULL,
             total DOUBLE PRECISION NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending',
+            status TEXT NOT NULL DEFAULT 'order_received',
+            paid BOOLEAN NOT NULL DEFAULT FALSE,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
@@ -87,7 +88,7 @@ pub async fn init_database() -> Result<(), String> {
                 WHERE table_name = 'orders' 
                 AND column_name = 'status'
             ) THEN
-                ALTER TABLE orders ADD COLUMN status TEXT NOT NULL DEFAULT 'pending';
+                ALTER TABLE orders ADD COLUMN status TEXT NOT NULL DEFAULT 'order_received';
             END IF;
         END $$;
         "#,
@@ -95,6 +96,25 @@ pub async fn init_database() -> Result<(), String> {
     .execute(&pool)
     .await
     .map_err(|e| format!("Failed to add status column to orders table: {}", e))?;
+
+    // Add paid column to existing orders table if it doesn't exist
+    sqlx::query(
+        r#"
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'orders' 
+                AND column_name = 'paid'
+            ) THEN
+                ALTER TABLE orders ADD COLUMN paid BOOLEAN NOT NULL DEFAULT FALSE;
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to add paid column to orders table: {}", e))?;
 
     // Add name column to existing orders table if it doesn't exist
     sqlx::query(
