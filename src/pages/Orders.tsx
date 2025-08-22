@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { 
   RotateCcw, 
@@ -15,67 +15,104 @@ import ClientSelectModal from "../components/ui/ClientSelectModal";
 import ClothesModal from "../components/ui/ClothesModal";
 import OrderCard from "../components/ui/OrderCard";
 
-import { Order, CreateOrderDto, UpdateOrderDto, OrderStatus } from "../types/order";
+import { Order, OrderStatus } from "../types/order";
 import { Client } from "../types/client";
 import { Clothes } from "../types/clothes";
+
+// Import orderStore hooks
+import {
+  useOrders,
+  useOrdersLoading,
+  useOrdersError,
+  useSearchTerm,
+  useStatusFilter,
+  useIsPanelOpen,
+  useIsSubmitting,
+  useEditingOrder,
+  useActiveTab,
+  useIsClientModalOpen,
+  useSelectedClient,
+  useIsClothesModalOpen,
+  useSelectedOrderForClothes,
+  useTemporaryOrderId,
+  useTemporaryClientId,
+  useFormData
+} from "../stores/orderStore";
+import { useOrderStore } from "../stores/orderStore";
 
 interface OrdersProps {
   onNavigate?: (page: string, params?: any) => void;
 }
 
 export default function Orders({ onNavigate }: OrdersProps = {}) {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
+  // Store state - migrated from local useState
+  const orders = useOrders();
+  const loading = useOrdersLoading();
+  const error = useOrdersError();
+  const searchTerm = useSearchTerm();
+  const statusFilter = useStatusFilter();
   
-  // SidePanel state
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  // SidePanel state - migrated from local useState
+  const isPanelOpen = useIsPanelOpen();
+  const isSubmitting = useIsSubmitting();
+  const editingOrder = useEditingOrder();
+  const activeTab = useActiveTab();
   
-  // Client select modal state
-  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  // Client select modal state - migrated from local useState
+  const isClientModalOpen = useIsClientModalOpen();
+  const selectedClient = useSelectedClient();
   
-  // Clothes modal state
-  const [isClothesModalOpen, setIsClothesModalOpen] = useState(false);
-  const [selectedOrderForClothes, setSelectedOrderForClothes] = useState<string | null>(null);
+  // Clothes modal state - migrated from local useState
+  const isClothesModalOpen = useIsClothesModalOpen();
+  const selectedOrderForClothes = useSelectedOrderForClothes();
   
-  // SidePanel tabs state
-  const [activeTab, setActiveTab] = useState<'details' | 'clothes'>('details');
+  // Temporary order state - migrated from local useState
+  const temporaryOrderId = useTemporaryOrderId();
+  const temporaryClientId = useTemporaryClientId();
+  const formData = useFormData();
+  
+  // Store actions - use individual actions to avoid re-render loops
+  const loadOrders = useOrderStore(state => state.loadOrders);
+  const deleteOrder = useOrderStore(state => state.deleteOrder);
+  const updateOrder = useOrderStore(state => state.updateOrder);
+  const createOrder = useOrderStore(state => state.createOrder);
+  const getFilteredOrders = useOrderStore(state => state.getFilteredOrders);
+  const getOrderClothes = useOrderStore(state => state.getOrderClothes);
+  
+  // UI actions
+  const setSearchTerm = useOrderStore(state => state.setSearchTerm);
+  const setStatusFilter = useOrderStore(state => state.setStatusFilter);
+  const openPanel = useOrderStore(state => state.openPanel);
+  const closePanel = useOrderStore(state => state.closePanel);
+  const setIsSubmitting = useOrderStore(state => state.setIsSubmitting);
+  const openClientModal = useOrderStore(state => state.openClientModal);
+  const closeClientModal = useOrderStore(state => state.closeClientModal);
+  const setSelectedClient = useOrderStore(state => state.setSelectedClient);
+  const openClothesModal = useOrderStore(state => state.openClothesModal);
+  const closeClothesModal = useOrderStore(state => state.closeClothesModal);
+  const setActiveTab = useOrderStore(state => state.setActiveTab);
+  
+  // Clothes actions
+  const loadOrderClothes = useOrderStore(state => state.loadOrderClothes);
+  
+  // Temporary actions
+  const setTemporaryOrderId = useOrderStore(state => state.setTemporaryOrderId);
+  const setTemporaryClientId = useOrderStore(state => state.setTemporaryClientId);
+  const setFormData = useOrderStore(state => state.setFormData);
+  const resetFormData = useOrderStore(state => state.resetFormData);
+  const cleanupTemporaryData = useOrderStore(state => state.cleanupTemporaryData);
+  
+  // Keep a local state temporarily for sidebar display only
   const [orderClothes, setOrderClothes] = useState<Clothes[]>([]);
-  
-  // Temporary order state
-  const [temporaryOrderId, setTemporaryOrderId] = useState<string | null>(null);
-  const [temporaryClientId, setTemporaryClientId] = useState<string | null>(null);
-  
-  // Use refs to track temporary IDs for cleanup without causing re-renders
-  const temporaryOrderIdRef = useRef<string | null>(null);
-  const temporaryClientIdRef = useRef<string | null>(null);
-  
-  // Form state
-  const [formData, setFormData] = useState<CreateOrderDto>({
-    name: "",
-    client_id: "",
-    due_date: "",
-    iva: 16, // Default IVA 16%
-    discount: 0,
-    status: "order_received" as OrderStatus,
-  });
 
   useEffect(() => {
     loadOrders();
-  }, []);
+  }, []); // Remove actions dependency to prevent loop
 
-  // Separate useEffect for cleanup on unmount only (not on state changes)
+  // Simplified cleanup on unmount - using store's cleanup method
   useEffect(() => {
-    // Cleanup on page unload
     const handleBeforeUnload = () => {
       if (temporaryOrderId || temporaryClientId) {
-        // Note: Due to browser limitations, we can't await async operations in beforeunload
-        // So we'll try to do cleanup but it might not complete
         cleanupTemporaryData();
       }
     };
@@ -84,87 +121,30 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []); // No dependencies - only runs on mount/unmount
-
-  // Cleanup only on component unmount - using refs to avoid dependency issues
-  useEffect(() => {
-    return () => {
-      // Use ref values for cleanup
-      const currentOrderId = temporaryOrderIdRef.current;
-      const currentClientId = temporaryClientIdRef.current;
-      
-      if (currentOrderId || currentClientId) {
-        // Call cleanup with ref values
-        (async () => {
-          if (currentOrderId) {
-            try {
-              await invoke<boolean>("delete_order", { id: currentOrderId });
-              console.log("🧹 Order temporária deletada no unmount:", currentOrderId);
-            } catch (error) {
-              console.error("Erro ao deletar order temporária no unmount:", error);
-            }
-          }
-          if (currentClientId) {
-            try {
-              await invoke<boolean>("delete_client", { id: currentClientId });
-              console.log("🧹 Cliente temporário deletado no unmount:", currentClientId);
-            } catch (error) {
-              console.error("Erro ao deletar cliente temporário no unmount:", error);
-            }
-          }
-        })();
+      // Final cleanup on unmount
+      if (temporaryOrderId || temporaryClientId) {
+        cleanupTemporaryData();
       }
     };
-  }, []); // No dependencies to avoid cleanup on every state change
-
-  const loadOrders = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const result = await invoke<Order[]>("list_orders");
-      
-      // Debug: log para ver formato das datas
-      console.log("Pedidos recebidos do backend:", result);
-      if (result.length > 0) {
-        console.log("Exemplo de order:", result[0]);
-        console.log("created_at tipo:", typeof result[0].created_at, "valor:", result[0].created_at);
-        console.log("due_date tipo:", typeof result[0].due_date, "valor:", result[0].due_date);
-      }
-      
-      setOrders(result);
-    } catch (err) {
-      console.error("Erro ao carregar pedidos:", err);
-      setError(err as string);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [temporaryOrderId, temporaryClientId]); // Remove actions dependency
 
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm("Tem certeza que deseja excluir este pedido?")) {
       return;
     }
 
-    try {
-      const success = await invoke<boolean>("delete_order", { id: orderId });
-      if (success) {
-        setOrders(orders.filter(order => order.id !== orderId));
-      } else {
-        alert("Erro ao excluir pedido");
-      }
-    } catch (err) {
-      console.error("Erro ao excluir pedido:", err);
-      alert("Erro ao excluir pedido: " + err);
+    const success = await deleteOrder(orderId);
+    if (!success) {
+      alert("Erro ao excluir pedido");
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === "iva" || name === "discount") {
-      setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+      setFormData({ [name]: parseFloat(value) || 0 });
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData({ [name]: value });
     }
   };
 
@@ -173,7 +153,8 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     
     if (order) {
       console.log("🔵 Editando order existente:", order.id);
-      setEditingOrder(order);
+      // Use store actions for editing existing order
+      openPanel(order);
       setFormData({
         name: order.name,
         client_id: order.client_id,
@@ -195,42 +176,26 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       });
 
       // Load clothes for this order
-      loadOrderClothes(order.id);
+      loadOrderClothesLocal(order.id);
     } else {
       console.log("🔵 Criando nova order - iniciando processo temporário...");
       // Create temporary order for new order
       const tempOrder = await createTemporaryOrder();
       if (tempOrder) {
         console.log("🔵 Order temporária criada, configurando estado:", tempOrder);
-        setEditingOrder(tempOrder);
-        setFormData({
-          name: "",
-          client_id: "",
-          due_date: "",
-          iva: 16,
-          discount: 0,
-          status: "order_received" as OrderStatus,
-        });
+        openPanel(tempOrder);
+        resetFormData();
         setSelectedClient(null);
         setOrderClothes([]);
       } else {
         console.log("🔴 Falha ao criar order temporária, usando fallback");
         // Fallback if temporary order creation fails
-        setEditingOrder(null);
-        setFormData({
-          name: "",
-          client_id: "",
-          due_date: "",
-          iva: 16,
-          discount: 0,
-          status: "order_received" as OrderStatus,
-        });
+        openPanel();
+        resetFormData();
         setSelectedClient(null);
         setOrderClothes([]);
       }
     }
-    setActiveTab('details'); // Reset to details tab
-    setIsPanelOpen(true);
     console.log("🔵 handleOpenPanel finalizado");
   };
 
@@ -241,24 +206,14 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       await loadOrders(); // Refresh to remove temp order from list
     }
     
-    setIsPanelOpen(false);
-    setEditingOrder(null);
-    setSelectedClient(null);
-    setActiveTab('details');
+    // Use store actions to close panel and reset state
+    closePanel();
+    resetFormData();
     setOrderClothes([]);
-    setFormData({
-      name: "",
-      client_id: "",
-      due_date: "",
-      iva: 16,
-      discount: 0,
-      status: "order_received" as OrderStatus,
-    });
   };
 
   const handleClientSelect = (client: Client) => {
     setSelectedClient(client);
-    setFormData(prev => ({ ...prev, client_id: client.id }));
   };
 
   const handleSubmit = async () => {
@@ -277,122 +232,58 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     try {
       if (editingOrder && !temporaryOrderId) {
         // Update existing order (not temporary)
-        const updateDto: UpdateOrderDto = {
-          name: formData.name,
-          client_id: formData.client_id,
-          due_date: formData.due_date,
-          iva: formData.iva,
-          discount: formData.discount,
-          status: formData.status,
-        };
-        await invoke("update_order", { id: editingOrder.id, dto: updateDto });
-        await loadOrders(); // Reload list
-        handleClosePanel();
+        const success = await updateOrder(editingOrder.id, formData);
+        if (success) {
+          handleClosePanel();
+        } else {
+          alert("Erro ao atualizar pedido");
+        }
       } else if (temporaryOrderId) {
         // Update temporary order to make it permanent
-        const updateDto: UpdateOrderDto = {
-          name: formData.name,
-          client_id: formData.client_id,
-          due_date: formData.due_date,
-          iva: formData.iva,
-          discount: formData.discount,
-          status: formData.status,
-        };
-        await invoke("update_order", { id: temporaryOrderId, dto: updateDto });
-        
-        // Clear temporary status - order and client are now permanent
-        setTemporaryOrderId(null);
-        setTemporaryClientId(null);
-        temporaryOrderIdRef.current = null;
-        temporaryClientIdRef.current = null;
-        await loadOrders(); // Reload list
-        
-        // Switch to clothes tab to let user add clothes
-        setActiveTab('clothes');
-        // Don't close panel, let user add clothes
+        const success = await updateOrder(temporaryOrderId, formData);
+        if (success) {
+          // Clear temporary status - order and client are now permanent
+          setTemporaryOrderId(null);
+          setTemporaryClientId(null);
+          
+          // Switch to clothes tab to let user add clothes
+          setActiveTab('clothes');
+          // Don't close panel, let user add clothes
+        } else {
+          alert("Erro ao salvar pedido");
+        }
       } else {
         // Fallback: create new order (shouldn't happen with new flow)
-        const newOrder = await invoke<Order>("create_order", { dto: formData });
-        await loadOrders(); // Reload list
-        
-        // Set as editing order and switch to clothes tab
-        setEditingOrder(newOrder);
-        setActiveTab('clothes');
-        // Don't close panel, let user add clothes
+        const newOrder = await createOrder(formData);
+        if (newOrder) {
+          // Set as editing order and switch to clothes tab
+          openPanel(newOrder);
+          setActiveTab('clothes');
+          // Don't close panel, let user add clothes
+        } else {
+          alert("Erro ao criar pedido");
+        }
       }
     } catch (error) {
       console.error("Erro ao salvar pedido:", error);
       alert("Erro ao salvar pedido: " + error);
-      
-      // In case of error, don't cleanup if it was a temporary order being made permanent
-      // Only cleanup if it was a completely new operation that failed
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.client_contact.includes(searchTerm);
-    
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredOrders = useMemo(() => getFilteredOrders(), [orders, searchTerm, statusFilter]);
 
 
 
   const handleOpenClothesModal = async (orderId: string) => {
     console.log("🔵 handleOpenClothesModal chamado com orderId:", orderId);
-    
-    try {
-      // Carregar todas as roupas do pedido para mostrar detalhes
-      const clothes = await invoke<Clothes[]>("get_clothes_by_order_id", { orderId });
-      
-      console.log("👕 DETALHES COMPLETOS DAS ROUPAS DO PEDIDO:", {
-        orderId: orderId,
-        totalClothes: clothes.length,
-        clothes: clothes.map(item => ({
-          id: item.id,
-          clothingType: item.clothing_type,
-          customType: item.custom_type,
-          unitPrice: item.unit_price,
-          color: item.color,
-          sizes: item.sizes,
-          totalQuantity: item.total_quantity,
-          services: item.services.map(service => ({
-            id: service.id,
-            serviceType: service.service_type,
-            location: service.location,
-            unitPrice: service.unit_price
-          })),
-          totalServicePrice: item.services.reduce((sum, s) => sum + s.unit_price, 0),
-          pricePerItem: item.unit_price + item.services.reduce((sum, s) => sum + s.unit_price, 0),
-          totalItemPrice: (item.unit_price + item.services.reduce((sum, s) => sum + s.unit_price, 0)) * item.total_quantity,
-          createdAt: item.created_at,
-          updatedAt: item.updated_at
-        })),
-        orderTotal: clothes.reduce((sum, item) => 
-          sum + ((item.unit_price + item.services.reduce((s, srv) => s + srv.unit_price, 0)) * item.total_quantity), 0
-        )
-      });
-      
-    } catch (error) {
-      console.error("❌ Erro ao carregar roupas do pedido:", error);
-    }
-    
-    setSelectedOrderForClothes(orderId);
-    setIsClothesModalOpen(true);
-    console.log("🔵 Modal state atualizado - selectedOrderForClothes:", orderId, "isOpen:", true);
+    openClothesModal(orderId);
   };
 
   const handleCloseClothesModal = () => {
     console.log("🔴 handleCloseClothesModal chamado");
-    setIsClothesModalOpen(false);
-    setSelectedOrderForClothes(null);
-    console.log("🔴 Modal fechado - isOpen:", false, "selectedOrderForClothes:", null);
+    closeClothesModal();
   };
 
   const handleClothesAdded = () => {
@@ -402,7 +293,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     // Se estivermos no SidePanel, também recarregar as roupas
     if (editingOrder) {
       console.log("🟢 Recarregando roupas para editingOrder:", editingOrder.id);
-      loadOrderClothes(editingOrder.id);
+      loadOrderClothesLocal(editingOrder.id);
     }
     console.log("🟢 handleClothesAdded finalizado");
   };
@@ -426,50 +317,23 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
           observations: "Cliente temporário - será removido se pedido for cancelado"
         };
         
-        console.log("🟨 Dados do cliente temporário:", clientDto);
-        
         const tempClient = await invoke<any>("create_client", { dto: clientDto });
-        
-        console.log("🟨 Cliente temporário criado com sucesso:", tempClient);
         tempClientId = tempClient.id;
-        setTemporaryClientId(tempClient.id); // Store the temporary client ID
-        temporaryClientIdRef.current = tempClient.id; // Store in ref for cleanup
+        setTemporaryClientId(tempClient.id);
         
-        // Verify that the client actually exists in the database
-        console.log("🟨 Verificando se o cliente realmente existe no banco...");
-        try {
-          const verifyClient = await invoke<any>("get_client_by_id", { id: tempClient.id });
-          if (verifyClient) {
-            console.log("✅ Cliente verificado no banco:", verifyClient);
-          } else {
-            console.log("❌ Cliente NÃO encontrado no banco após criação!");
-          }
-        } catch (verifyError) {
-          console.error("❌ Erro ao verificar cliente no banco:", verifyError);
-        }
       } catch (clientError) {
         console.error("❌ Erro ao criar cliente temporário:", clientError);
         // Try to get the first available client as fallback
-        try {
-          console.log("🟨 Tentando usar cliente existente como fallback...");
-          const clients = await invoke<any[]>("list_clients");
-          console.log("🟨 Clientes disponíveis:", clients);
-          
-          if (clients.length > 0) {
-            tempClientId = clients[0].id;
-            console.log("🟨 Usando cliente existente:", clients[0]);
-            // Don't set temporaryClientId since we're using an existing client
-          } else {
-            throw new Error("Nenhum cliente disponível");
-          }
-        } catch (listError) {
-          console.error("❌ Erro ao obter clientes:", listError);
-          return null;
+        const clients = await invoke<any[]>("list_clients");
+        if (clients.length > 0) {
+          tempClientId = clients[0].id;
+          console.log("🟨 Usando cliente existente:", clients[0]);
+        } else {
+          throw new Error("Nenhum cliente disponível");
         }
       }
 
       // Criar order temporária com dados mínimos
-      // Try different date formats to fix serialization issue
       const today = new Date();
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -478,47 +342,14 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       const tempOrderData = {
         name: "Pedido Temporário",
         client_id: tempClientId,
-        due_date: `${year}-${month}-${day}`, // YYYY-MM-DD format
-        iva: 16.0, // Ensure it's a float
-        discount: 0.0, // Ensure it's a float
+        due_date: `${year}-${month}-${day}`,
+        iva: 16.0,
+        discount: 0.0,
         status: "order_received",
       };
 
-      console.log("🟨 Dados da order temporária:", tempOrderData);
-      console.log("🟨 Tentando criar order temporária...");
-
       const tempOrder = await invoke<Order>("create_order", { dto: tempOrderData });
-      
-      console.log("🟨 Order temporária criada com sucesso:", tempOrder);
       setTemporaryOrderId(tempOrder.id);
-      temporaryOrderIdRef.current = tempOrder.id; // Store in ref for cleanup
-      
-      // Wait a bit for database consistency (potential network/timing issue)
-      console.log("🟨 Aguardando 500ms para consistência do banco...");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Verify that the order actually exists in the database
-      console.log("🟨 Verificando se a order realmente existe no banco...");
-      try {
-        const verifyOrder = await invoke<Order | null>("get_order_by_id", { id: tempOrder.id });
-        if (verifyOrder) {
-          console.log("✅ Order verificada no banco:", verifyOrder);
-        } else {
-          console.log("❌ Order NÃO encontrada no banco após criação!");
-          
-          // Try to fetch all orders to see if it appears
-          console.log("🟨 Buscando todas as orders para debug...");
-          const allOrders = await invoke<Order[]>("list_orders");
-          const foundInList = allOrders.find(o => o.id === tempOrder.id);
-          if (foundInList) {
-            console.log("✅ Order encontrada na lista geral:", foundInList);
-          } else {
-            console.log("❌ Order NÃO encontrada nem na lista geral!");
-          }
-        }
-      } catch (verifyError) {
-        console.error("❌ Erro ao verificar order no banco:", verifyError);
-      }
       
       return tempOrder;
     } catch (error) {
@@ -527,50 +358,12 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     }
   };
 
-  const deleteTemporaryOrder = async () => {
-    if (temporaryOrderId) {
-      try {
-        await invoke<boolean>("delete_order", { id: temporaryOrderId });
-        setTemporaryOrderId(null);
-        temporaryOrderIdRef.current = null; // Clear ref
-      } catch (error) {
-        console.error("Erro ao deletar order temporária:", error);
-      }
-    }
-  };
-
-  const deleteTemporaryClient = async () => {
-    if (temporaryClientId) {
-      try {
-        await invoke<boolean>("delete_client", { id: temporaryClientId });
-        setTemporaryClientId(null);
-        temporaryClientIdRef.current = null; // Clear ref
-      } catch (error) {
-        console.error("Erro ao deletar cliente temporário:", error);
-      }
-    }
-  };
-
-  const cleanupTemporaryData = async () => {
-    console.log("🧹 Limpando dados temporários:", { temporaryOrderId, temporaryClientId });
-    
-    // Delete temporary order first (it references the client)
-    await deleteTemporaryOrder();
-    
-    // Then delete temporary client
-    await deleteTemporaryClient();
-    
-    console.log("🧹 Limpeza de dados temporários concluída");
-  };
-
-  const loadOrderClothes = async (orderId: string) => {
-    try {
-      const clothes = await invoke<Clothes[]>("get_clothes_by_order_id", { orderId });
-      setOrderClothes(clothes);
-    } catch (err) {
-      console.error("Erro ao carregar roupas:", err);
-      setOrderClothes([]);
-    }
+  const loadOrderClothesLocal = async (orderId: string) => {
+    // Use store action to load clothes
+    await loadOrderClothes(orderId);
+    // Update local state for sidebar display
+    const clothes = getOrderClothes(orderId);
+    setOrderClothes(clothes);
   };
 
   const handleDeleteClothes = async (clothesId: string) => {
@@ -582,7 +375,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       const success = await invoke<boolean>("delete_clothes", { id: clothesId });
       if (success) {
         if (editingOrder) {
-          loadOrderClothes(editingOrder.id);
+          loadOrderClothesLocal(editingOrder.id);
         }
         loadOrders(); // Atualizar valores totais
       }
@@ -814,11 +607,11 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
                 placeholder="Selecione um cliente"
                 readOnly
                 className="input-dark flex-1 px-4 py-2 rounded-lg cursor-pointer"
-                onClick={() => setIsClientModalOpen(true)}
+                onClick={() => openClientModal()}
               />
               <Button
                 type="button"
-                onClick={() => setIsClientModalOpen(true)}
+                onClick={() => openClientModal()}
                 className="px-4 py-2 rounded-lg font-medium hover-lift"
               >
                 <User className="w-4 h-4" />
@@ -1031,27 +824,20 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       {/* Modal de seleção de cliente */}
       <ClientSelectModal
         isOpen={isClientModalOpen}
-        onClose={() => setIsClientModalOpen(false)}
+        onClose={() => closeClientModal()}
         onSelect={handleClientSelect}
         selectedClientId={selectedClient?.id}
       />
 
       {/* Modal de roupas */}
-      {(() => {
-        console.log("🟣 Verificando renderização do modal:", {
-          selectedOrderForClothes,
-          isClothesModalOpen,
-          shouldRender: !!selectedOrderForClothes
-        });
-        return selectedOrderForClothes && (
-          <ClothesModal
-            isOpen={isClothesModalOpen}
-            onClose={handleCloseClothesModal}
-            orderId={selectedOrderForClothes}
-            onClothesAdded={handleClothesAdded}
-          />
-        );
-      })()}
+      {selectedOrderForClothes && (
+        <ClothesModal
+          isOpen={isClothesModalOpen}
+          onClose={handleCloseClothesModal}
+          orderId={selectedOrderForClothes}
+          onClothesAdded={handleClothesAdded}
+        />
+      )}
     </div>
   );
 }

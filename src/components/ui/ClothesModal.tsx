@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { X, Plus, Minus, Shirt } from 'lucide-react';
 import { Button } from "./button";
 import { 
@@ -9,12 +8,12 @@ import {
   ClothingSize, 
   SizesMap, 
   CreateClothes,
-  Clothes,
   CLOTHING_TYPE_LABELS,
   SERVICE_TYPE_LABELS,
   SERVICE_LOCATION_LABELS,
   CLOTHING_SIZES
 } from "../../types/clothes";
+import { useOrderStore } from "../../stores/orderStore";
 
 interface ClothesModalProps {
   isOpen: boolean;
@@ -31,6 +30,10 @@ interface ServiceFormData {
 
 export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded }: ClothesModalProps) {
   console.log("🟠 ClothesModal renderizado com props:", { isOpen, orderId, onClothesAdded: !!onClothesAdded });
+  
+  // Store actions
+  const addClothesToOrder = useOrderStore(state => state.addClothesToOrder);
+  const loadOrders = useOrderStore(state => state.loadOrders);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -166,17 +169,22 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
         }))
       };
 
-      console.log("🟠 Chamando invoke create_clothes com data:", createClothesData);
+      console.log("🟠 Chamando store action para criar clothes:", createClothesData);
       
-      const result = await invoke<Clothes>("create_clothes", { 
-        dto: createClothesData 
-      });
+      const success = await addClothesToOrder(orderId, createClothesData);
 
-      console.log("🟠 Roupa criada com sucesso:", result);
-      
-      if (onClothesAdded) {
-        console.log("🟠 Chamando onClothesAdded callback");
-        onClothesAdded();
+      if (success) {
+        console.log("🟠 Roupa criada com sucesso através do store");
+        
+        // Also refresh orders to update totals
+        await loadOrders();
+        
+        if (onClothesAdded) {
+          console.log("🟠 Chamando onClothesAdded callback");
+          onClothesAdded();
+        }
+      } else {
+        throw new Error("Erro ao criar roupa através do store");
       }
       
       console.log("🟠 Fechando modal");
