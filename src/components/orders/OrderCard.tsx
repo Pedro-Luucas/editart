@@ -10,7 +10,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { Button } from "./button";
+import { Button } from "../ui/button";
 import { formatDateTime, formatDateOnly } from "../../utils/dateUtils";
 import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "../../types/order";
 

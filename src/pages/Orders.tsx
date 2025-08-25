@@ -3,21 +3,14 @@ import { invoke } from "@tauri-apps/api/core";
 import { 
   RotateCcw, 
   Plus, 
-  Trash2, 
   FileText, 
-  X, 
-  User,
-  Shirt
+  X
 } from 'lucide-react';
 import { Button } from "../components/ui/button";
-import SidePanel from "../components/ui/SidePanel";
-import ClientSelectModal from "../components/ui/ClientSelectModal";
-import ClothesModal from "../components/ui/ClothesModal";
-import OrderCard from "../components/ui/OrderCard";
+import OrderCard from "../components/orders/OrderCard";
+import OrderSidePanel from "../components/orders/OrderSidePanel";
 
 import { Order, OrderStatus } from "../types/order";
-import { Client } from "../types/client";
-import { Clothes } from "../types/clothes";
 
 // Import orderStore hooks
 import {
@@ -27,13 +20,7 @@ import {
   useSearchTerm,
   useStatusFilter,
   useIsPanelOpen,
-  useIsSubmitting,
-  useEditingOrder,
-  useActiveTab,
-  useIsClientModalOpen,
-  useSelectedClient,
-  useIsClothesModalOpen,
-  useSelectedOrderForClothes
+  useEditingOrder
 } from "../stores/orderStore";
 import { useOrderStore } from "../stores/orderStore";
 
@@ -54,22 +41,12 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   
   // SidePanel state - migrated from local useState
   const isPanelOpen = useIsPanelOpen();
-  const isSubmitting = useIsSubmitting();
   const editingOrder = useEditingOrder();
-  const activeTab = useActiveTab();
   
-  // Client select modal state - migrated from local useState
-  const isClientModalOpen = useIsClientModalOpen();
-  const selectedClient = useSelectedClient();
-  
-  // Clothes modal state - migrated from local useState
-  const isClothesModalOpen = useIsClothesModalOpen();
-  const selectedOrderForClothes = useSelectedOrderForClothes();
+
   
   console.log("🔵 Orders - Estado atual:", {
     ordersCount: orders.length,
-    isClothesModalOpen,
-    selectedOrderForClothes,
     isPanelOpen,
     editingOrder: editingOrder?.id
   });
@@ -87,27 +64,8 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const setStatusFilter = useOrderStore(state => state.setStatusFilter);
   const openPanel = useOrderStore(state => state.openPanel);
   const closePanel = useOrderStore(state => state.closePanel);
-  const setIsSubmitting = useOrderStore(state => state.setIsSubmitting);
-  const openClientModal = useOrderStore(state => state.openClientModal);
-  const closeClientModal = useOrderStore(state => state.closeClientModal);
-  const setSelectedClient = useOrderStore(state => state.setSelectedClient);
-  const openClothesModal = useOrderStore(state => state.openClothesModal);
-  const closeClothesModal = useOrderStore(state => state.closeClothesModal);
-  const setActiveTab = useOrderStore(state => state.setActiveTab);
   
-  // Clothes actions
-  const loadOrderClothes = useOrderStore(state => state.loadOrderClothes);
-  
-  // Keep a local state temporarily for sidebar display only
-  const [orderClothes, setOrderClothes] = useState<Clothes[]>([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    client_id: '',
-    due_date: '',
-    iva: 16.0,
-    discount: 0.0,
-    status: 'order_received' as OrderStatus,
-  });
+
 
   useEffect(() => {
     console.log("🔵 Orders useEffect - loadOrders chamado");
@@ -125,97 +83,28 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name === "iva" || name === "discount") {
-      setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
   const handleOpenPanel = async (order?: Order) => {
     console.log("🔵 handleOpenPanel chamado", { order: order ? "existente" : "novo", orderId: order?.id });
     
     if (order) {
       console.log("🔵 Editando order existente:", order.id);
-      // Use store actions for editing existing order
       openPanel(order);
-      setFormData({
-        name: order.name,
-        client_id: order.client_id,
-        due_date: order.due_date,
-        iva: order.iva,
-        discount: order.discount,
-        status: order.status,
-      });
-      setSelectedClient({
-        id: order.client_id,
-        name: order.client_name,
-        contact: order.client_contact,
-        nuit: "", // Will be fetched if needed
-        category: "",
-        requisition: "",
-        observations: "",
-        created_at: "",
-        updated_at: "",
-      });
-
-      // Load clothes for this order
-      loadOrderClothesLocal(order.id);
     } else {
       console.log("🔵 Criando nova order");
       openPanel();
-      setFormData({
-        name: '',
-        client_id: '',
-        due_date: new Date().toISOString().split('T')[0],
-        iva: 16.0,
-        discount: 0.0,
-        status: 'order_received' as OrderStatus,
-      });
-      setSelectedClient(null);
-      setOrderClothes([]);
     }
     console.log("🔵 handleOpenPanel finalizado");
   };
 
   const handleClosePanel = async () => {
-    // Use store actions to close panel and reset state
     closePanel();
-    setFormData({
-      name: '',
-      client_id: '',
-      due_date: '',
-      iva: 16.0,
-      discount: 0.0,
-      status: 'order_received' as OrderStatus,
-    });
-    setOrderClothes([]);
   };
 
-  const handleClientSelect = (client: Client) => {
-    setSelectedClient(client);
-    setFormData(prev => ({ ...prev, client_id: client.id }));
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      alert("Por favor, digite um nome para o pedido");
-      return;
-    }
-
-    if (!selectedClient) {
-      alert("Por favor, selecione um cliente");
-      return;
-    }
-
-    setIsSubmitting(true);
-    
+  const handleSaveOrder = async (orderData: any) => {
     try {
       if (editingOrder) {
         // Update existing order
-        const success = await updateOrder(editingOrder.id, formData);
+        const success = await updateOrder(editingOrder.id, orderData);
         if (success) {
           handleClosePanel();
         } else {
@@ -223,12 +112,10 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
         }
       } else {
         // Create new order
-        const newOrder = await createOrder(formData);
+        const newOrder = await createOrder(orderData);
         if (newOrder) {
           // Set as editing order and switch to clothes tab
           openPanel(newOrder);
-          setActiveTab('clothes');
-          // Don't close panel, let user add clothes
         } else {
           alert("Erro ao criar pedido");
         }
@@ -236,8 +123,6 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     } catch (error) {
       console.error("Erro ao salvar pedido:", error);
       alert("Erro ao salvar pedido: " + error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -247,58 +132,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     return getFilteredOrders();
   }, [orders, searchTerm, statusFilter]);
 
-  const handleOpenClothesModal = async (orderId: string) => {
-    console.log("🔵 handleOpenClothesModal chamado com orderId:", orderId);
-    console.log("🔵 Estado antes de abrir modal:", { isClothesModalOpen, selectedOrderForClothes });
-    openClothesModal(orderId);
-    console.log("🔵 Modal aberto - estado após openClothesModal");
-  };
 
-  const handleCloseClothesModal = () => {
-    console.log("🔴 handleCloseClothesModal chamado");
-    console.log("🔴 Estado antes de fechar modal:", { isClothesModalOpen, selectedOrderForClothes });
-    closeClothesModal();
-    console.log("🔴 Modal fechado - estado após closeClothesModal");
-  };
-
-  const handleClothesAdded = () => {
-    console.log("🟢 handleClothesAdded chamado");
-    // Recarregar os pedidos para atualizar os valores
-    loadOrders();
-    // Se estivermos no SidePanel, também recarregar as roupas
-    if (editingOrder) {
-      console.log("🟢 Recarregando roupas para editingOrder:", editingOrder.id);
-      loadOrderClothesLocal(editingOrder.id);
-    }
-    console.log("🟢 handleClothesAdded finalizado");
-  };
-
-  const loadOrderClothesLocal = async (orderId: string) => {
-    // Use store action to load clothes
-    await loadOrderClothes(orderId);
-    // Update local state for sidebar display
-    const clothes = getOrderClothes(orderId);
-    setOrderClothes(clothes);
-  };
-
-  const handleDeleteClothes = async (clothesId: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta roupa?")) {
-      return;
-    }
-
-    try {
-      const success = await invoke<boolean>("delete_clothes", { id: clothesId });
-      if (success) {
-        if (editingOrder) {
-          loadOrderClothesLocal(editingOrder.id);
-        }
-        loadOrders(); // Atualizar valores totais
-      }
-    } catch (err) {
-      console.error("Erro ao excluir roupa:", err);
-      alert("Erro ao excluir roupa: " + err);
-    }
-  };
 
   const handleViewOrder = (orderId: string) => {
     console.log("🔵 handleViewOrder chamado com orderId:", orderId);
@@ -311,8 +145,6 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   };
 
   console.log("🔵 Orders - Antes do return, estado final:", {
-    isClothesModalOpen,
-    selectedOrderForClothes,
     filteredOrdersCount: filteredOrders.length
   });
 
@@ -452,7 +284,8 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
               onDelete={handleDeleteOrder}
               onAddClothes={(orderId) => {
                 console.log("🟡 Botão de roupas clicado no card, order.id:", orderId);
-                handleOpenClothesModal(orderId);
+                // Abrir o SidePanel para editar o pedido e adicionar roupas
+                handleOpenPanel(order);
               }}
               onCopyId={(orderId) => navigator.clipboard.writeText(orderId)}
             />
@@ -460,315 +293,15 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
         </div>
       )}
 
-      {/* SidePanel para adicionar/editar pedido */}
-      <SidePanel
+      {/* OrderSidePanel para adicionar/editar pedido */}
+      <OrderSidePanel
         isOpen={isPanelOpen}
+        editingOrder={editingOrder || undefined}
         onClose={handleClosePanel}
-        onCancel={handleClosePanel}
-        onSave={activeTab === 'details' ? handleSubmit : undefined}
-        title={editingOrder ? 'Editar Pedido' : 'Novo Pedido'}
-        isLoading={isSubmitting}
-      >
-        {/* Tabs Navigation */}
-        <div className="flex space-x-1 mb-6 bg-primary-800 p-1 rounded-lg">
-          <button
-            onClick={() => setActiveTab('details')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'details'
-                ? 'bg-primary-600 text-white'
-                : 'text-primary-300 hover:text-white hover:bg-primary-700'
-            }`}
-          >
-            Detalhes
-          </button>
-          <button
-            onClick={() => setActiveTab('clothes')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'clothes'
-                ? 'bg-primary-600 text-white'
-                : 'text-primary-300 hover:text-white hover:bg-primary-700'
-            }`}
-          >
-            Roupas
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'details' ? (
-          <div className="space-y-4">
-            {/* Nome do pedido */}
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Nome do Pedido <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-              className="input-dark w-full px-4 py-2 rounded-lg"
-              placeholder="Digite um nome para identificar o pedido"
-            />
-          </div>
-
-          {/* Cliente */}
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Cliente <span className="text-red-400">*</span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={selectedClient ? selectedClient.name : ""}
-                placeholder="Selecione um cliente"
-                readOnly
-                className="input-dark flex-1 px-4 py-2 rounded-lg cursor-pointer"
-                onClick={() => openClientModal()}
-              />
-              <Button
-                type="button"
-                onClick={() => openClientModal()}
-                className="px-4 py-2 rounded-lg font-medium hover-lift"
-              >
-                <User className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Data de vencimento */}
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Data de Vencimento <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="date"
-              name="due_date"
-              value={formData.due_date}
-              onChange={handleInputChange}
-              required
-              className="input-dark w-full px-4 py-2 rounded-lg"
-            />
-          </div>
-
-          {/* IVA */}
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              IVA (%) <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="number"
-              name="iva"
-              value={formData.iva}
-              onChange={handleInputChange}
-              required
-              min="0"
-              max="100"
-              step="0.01"
-              className="inputCurrency"
-              placeholder="16"
-            />
-          </div>
-
-          {/* Desconto */}
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Desconto (valor absoluto)
-            </label>
-            <input
-              type="number"
-              name="discount"
-              value={formData.discount}
-              onChange={handleInputChange}
-              min="0"
-              step="0.01"
-              className="input-dark w-full px-4 py-2 rounded-lg"
-              placeholder="0.00"
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Status <span className="text-red-400">*</span>
-            </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              required
-              className="input-dark w-full px-4 py-2 rounded-lg"
-            >
-              <option value="order_received">Pedido Recebido</option>
-              <option value="in_production">Pedido na Produção</option>
-              <option value="ready_for_delivery">Pedido Pronto pra Entrega</option>
-              <option value="delivered">Pedido Entregue</option>
-            </select>
-          </div>
-
-          {/* Nota sobre cálculos */}
-          <div className="p-3 bg-primary-700/50 rounded-lg border border-primary-600">
-            <p className="text-primary-300 text-sm">
-              <strong>Nota:</strong> Os valores de subtotal e total serão calculados automaticamente 
-              com base nas roupas adicionadas.
-            </p>
-          </div>
-          </div>
-        ) : (
-          /* Clothes Tab */
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium text-primary-200">Roupas do Pedido</h3>
-              <Button
-                onClick={() => editingOrder && handleOpenClothesModal(editingOrder.id)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg"
-              >
-                <Plus className="w-4 h-4" />
-                Adicionar Roupas
-              </Button>
-            </div>
-
-            {/* Lista de roupas */}
-            {orderClothes.length === 0 ? (
-              <div className="text-center py-8 text-primary-400">
-                <Shirt className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Nenhuma roupa adicionada ainda.</p>
-                <p className="text-sm">Clique em "Adicionar Roupas" para começar.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {orderClothes.map((clothes) => (
-                  <div key={clothes.id} className="bg-primary-800 p-4 rounded-lg border border-primary-600">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className="font-medium text-primary-100">
-                          {clothes.clothing_type === 'custom' 
-                            ? clothes.custom_type 
-                            : Object.entries({
-                                with_collar: 'Com Gola',
-                                without_collar: 'Sem Gola', 
-                                thick_cap: 'Boné Grosso',
-                                simple_cap: 'Boné Simples',
-                                reflectors: 'Refletores',
-                                uniform: 'Fardamento'
-                              }).find(([key]) => key === clothes.clothing_type)?.[1] || clothes.clothing_type
-                          }
-                        </h4>
-                        <p className="text-sm text-primary-300">Cor: {clothes.color}</p>
-                      </div>
-                      <Button
-                        onClick={() => handleDeleteClothes(clothes.id)}
-                        variant="destructive"
-                        size="sm"
-                        className="opacity-70 hover:opacity-100"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    {/* Tamanhos */}
-                    <div className="mb-3">
-                      <p className="text-sm text-primary-400 mb-1">Tamanhos:</p>
-                      <div className="flex gap-2 text-sm">
-                        {Object.entries(clothes.sizes).map(([size, qty]) => 
-                          qty > 0 && (
-                            <span key={size} className="bg-primary-700 px-2 py-1 rounded text-primary-200">
-                              {size}: {qty}
-                            </span>
-                          )
-                        )}
-                      </div>
-                      <p className="text-sm text-primary-300 mt-1">Total: {clothes.total_quantity} peças</p>
-                    </div>
-
-                    {/* Serviços */}
-                    {clothes.services.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-sm text-primary-400 mb-1">Serviços:</p>
-                        <div className="space-y-1">
-                          {clothes.services.map((service) => (
-                            <div key={service.id} className="text-sm text-primary-300 bg-primary-700 px-2 py-1 rounded">
-                              {Object.entries({
-                                stamping: 'Estampagem',
-                                embroidery: 'Bordado',
-                                transfer: 'Transfer'
-                              }).find(([key]) => key === service.service_type)?.[1]} - {' '}
-                              {Object.entries({
-                                front_right: 'Frente Direita',
-                                front_left: 'Frente Esquerda',
-                                back: 'Atrás',
-                                sleeve_left: 'Manga Esquerda',
-                                sleeve_right: 'Manga Direita'
-                              }).find(([key]) => key === service.location)?.[1]} - {' '}
-                              {service.unit_price.toFixed(2)} MT
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Preços */}
-                    <div className="text-sm">
-                      <div className="flex justify-between text-primary-300">
-                        <span>Preço base: {clothes.unit_price.toFixed(2)} MT</span>
-                        <span>Serviços: {clothes.services.reduce((sum, s) => sum + s.unit_price, 0).toFixed(2)} MT</span>
-                      </div>
-                      <div className="flex justify-between font-medium text-primary-100 mt-1 pt-1 border-t border-primary-600">
-                        <span>Total:</span>
-                        <span>{((clothes.unit_price + clothes.services.reduce((sum, s) => sum + s.unit_price, 0)) * clothes.total_quantity).toFixed(2)} MT</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Resumo total */}
-                <div className="bg-green-900/30 p-4 rounded-lg border border-green-600">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-green-200">Total de Roupas:</span>
-                    <span className="text-xl font-bold text-green-400">
-                      {orderClothes.reduce((sum, clothes) => 
-                        sum + ((clothes.unit_price + clothes.services.reduce((s, srv) => s + srv.unit_price, 0)) * clothes.total_quantity), 0
-                      ).toFixed(2)} MT
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </SidePanel>
-
-      {/* Modal de seleção de cliente */}
-      <ClientSelectModal
-        isOpen={isClientModalOpen}
-        onClose={() => closeClientModal()}
-        onSelect={handleClientSelect}
-        selectedClientId={selectedClient?.id}
+        onSave={handleSaveOrder}
       />
 
-      {/* Modal de roupas */}
-      {(() => {
-        console.log("🔵 Orders - Renderizando ClothesModal:", {
-          selectedOrderForClothes,
-          isClothesModalOpen,
-          shouldRender: selectedOrderForClothes && isClothesModalOpen
-        });
-        
-        if (selectedOrderForClothes && isClothesModalOpen) {
-          console.log("🔵 Orders - ClothesModal será renderizado para orderId:", selectedOrderForClothes);
-          return (
-            <ClothesModal
-              isOpen={isClothesModalOpen}
-              onClose={handleCloseClothesModal}
-              orderId={selectedOrderForClothes}
-              onClothesAdded={handleClothesAdded}
-            />
-          );
-        } else {
-          console.log("🔵 Orders - ClothesModal não será renderizado");
-          return null;
-        }
-      })()}
+
     </div>
   );
 }
