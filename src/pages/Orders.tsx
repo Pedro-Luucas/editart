@@ -33,10 +33,7 @@ import {
   useIsClientModalOpen,
   useSelectedClient,
   useIsClothesModalOpen,
-  useSelectedOrderForClothes,
-  useTemporaryOrderId,
-  useTemporaryClientId,
-  useFormData
+  useSelectedOrderForClothes
 } from "../stores/orderStore";
 import { useOrderStore } from "../stores/orderStore";
 
@@ -45,6 +42,9 @@ interface OrdersProps {
 }
 
 export default function Orders({ onNavigate }: OrdersProps = {}) {
+  console.log("🔵 Orders component renderizado");
+  console.log("🔵 Orders component - Stack trace:", new Error().stack?.split('\n').slice(1, 4).join('\n'));
+  
   // Store state - migrated from local useState
   const orders = useOrders();
   const loading = useOrdersLoading();
@@ -66,10 +66,13 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const isClothesModalOpen = useIsClothesModalOpen();
   const selectedOrderForClothes = useSelectedOrderForClothes();
   
-  // Temporary order state - migrated from local useState
-  const temporaryOrderId = useTemporaryOrderId();
-  const temporaryClientId = useTemporaryClientId();
-  const formData = useFormData();
+  console.log("🔵 Orders - Estado atual:", {
+    ordersCount: orders.length,
+    isClothesModalOpen,
+    selectedOrderForClothes,
+    isPanelOpen,
+    editingOrder: editingOrder?.id
+  });
   
   // Store actions - use individual actions to avoid re-render loops
   const loadOrders = useOrderStore(state => state.loadOrders);
@@ -95,38 +98,21 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   // Clothes actions
   const loadOrderClothes = useOrderStore(state => state.loadOrderClothes);
   
-  // Temporary actions
-  const setTemporaryOrderId = useOrderStore(state => state.setTemporaryOrderId);
-  const setTemporaryClientId = useOrderStore(state => state.setTemporaryClientId);
-  const setFormData = useOrderStore(state => state.setFormData);
-  const resetFormData = useOrderStore(state => state.resetFormData);
-  const cleanupTemporaryData = useOrderStore(state => state.cleanupTemporaryData);
-  
   // Keep a local state temporarily for sidebar display only
   const [orderClothes, setOrderClothes] = useState<Clothes[]>([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    client_id: '',
+    due_date: '',
+    iva: 16.0,
+    discount: 0.0,
+    status: 'order_received' as OrderStatus,
+  });
 
   useEffect(() => {
+    console.log("🔵 Orders useEffect - loadOrders chamado");
     loadOrders();
   }, []); // Remove actions dependency to prevent loop
-
-  // Simplified cleanup on unmount - using store's cleanup method
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (temporaryOrderId || temporaryClientId) {
-        cleanupTemporaryData();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      // Final cleanup on unmount
-      if (temporaryOrderId || temporaryClientId) {
-        cleanupTemporaryData();
-      }
-    };
-  }, [temporaryOrderId, temporaryClientId]); // Remove actions dependency
 
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm("Tem certeza que deseja excluir este pedido?")) {
@@ -142,9 +128,9 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === "iva" || name === "discount") {
-      setFormData({ [name]: parseFloat(value) || 0 });
+      setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else {
-      setFormData({ [name]: value });
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -178,42 +164,39 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       // Load clothes for this order
       loadOrderClothesLocal(order.id);
     } else {
-      console.log("🔵 Criando nova order - iniciando processo temporário...");
-      // Create temporary order for new order
-      const tempOrder = await createTemporaryOrder();
-      if (tempOrder) {
-        console.log("🔵 Order temporária criada, configurando estado:", tempOrder);
-        openPanel(tempOrder);
-        resetFormData();
-        setSelectedClient(null);
-        setOrderClothes([]);
-      } else {
-        console.log("🔴 Falha ao criar order temporária, usando fallback");
-        // Fallback if temporary order creation fails
-        openPanel();
-        resetFormData();
-        setSelectedClient(null);
-        setOrderClothes([]);
-      }
+      console.log("🔵 Criando nova order");
+      openPanel();
+      setFormData({
+        name: '',
+        client_id: '',
+        due_date: new Date().toISOString().split('T')[0],
+        iva: 16.0,
+        discount: 0.0,
+        status: 'order_received' as OrderStatus,
+      });
+      setSelectedClient(null);
+      setOrderClothes([]);
     }
     console.log("🔵 handleOpenPanel finalizado");
   };
 
   const handleClosePanel = async () => {
-    // Delete temporary data if exists (order and client)
-    if (temporaryOrderId || temporaryClientId) {
-      await cleanupTemporaryData();
-      await loadOrders(); // Refresh to remove temp order from list
-    }
-    
     // Use store actions to close panel and reset state
     closePanel();
-    resetFormData();
+    setFormData({
+      name: '',
+      client_id: '',
+      due_date: '',
+      iva: 16.0,
+      discount: 0.0,
+      status: 'order_received' as OrderStatus,
+    });
     setOrderClothes([]);
   };
 
   const handleClientSelect = (client: Client) => {
     setSelectedClient(client);
+    setFormData(prev => ({ ...prev, client_id: client.id }));
   };
 
   const handleSubmit = async () => {
@@ -230,30 +213,16 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     setIsSubmitting(true);
     
     try {
-      if (editingOrder && !temporaryOrderId) {
-        // Update existing order (not temporary)
+      if (editingOrder) {
+        // Update existing order
         const success = await updateOrder(editingOrder.id, formData);
         if (success) {
           handleClosePanel();
         } else {
           alert("Erro ao atualizar pedido");
         }
-      } else if (temporaryOrderId) {
-        // Update temporary order to make it permanent
-        const success = await updateOrder(temporaryOrderId, formData);
-        if (success) {
-          // Clear temporary status - order and client are now permanent
-          setTemporaryOrderId(null);
-          setTemporaryClientId(null);
-          
-          // Switch to clothes tab to let user add clothes
-          setActiveTab('clothes');
-          // Don't close panel, let user add clothes
-        } else {
-          alert("Erro ao salvar pedido");
-        }
       } else {
-        // Fallback: create new order (shouldn't happen with new flow)
+        // Create new order
         const newOrder = await createOrder(formData);
         if (newOrder) {
           // Set as editing order and switch to clothes tab
@@ -272,18 +241,24 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     }
   };
 
-  const filteredOrders = useMemo(() => getFilteredOrders(), [orders, searchTerm, statusFilter]);
-
-
+  const filteredOrders = useMemo(() => {
+    console.log("🔵 Orders - getFilteredOrders executado");
+    console.log("🔵 Orders - getFilteredOrders - Stack trace:", new Error().stack?.split('\n').slice(1, 4).join('\n'));
+    return getFilteredOrders();
+  }, [orders, searchTerm, statusFilter]);
 
   const handleOpenClothesModal = async (orderId: string) => {
     console.log("🔵 handleOpenClothesModal chamado com orderId:", orderId);
+    console.log("🔵 Estado antes de abrir modal:", { isClothesModalOpen, selectedOrderForClothes });
     openClothesModal(orderId);
+    console.log("🔵 Modal aberto - estado após openClothesModal");
   };
 
   const handleCloseClothesModal = () => {
     console.log("🔴 handleCloseClothesModal chamado");
+    console.log("🔴 Estado antes de fechar modal:", { isClothesModalOpen, selectedOrderForClothes });
     closeClothesModal();
+    console.log("🔴 Modal fechado - estado após closeClothesModal");
   };
 
   const handleClothesAdded = () => {
@@ -296,66 +271,6 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       loadOrderClothesLocal(editingOrder.id);
     }
     console.log("🟢 handleClothesAdded finalizado");
-  };
-
-  const createTemporaryOrder = async (): Promise<Order | null> => {
-    console.log("🟨 Iniciando criação de order temporária...");
-    
-    try {
-      // First, create a temporary client or use existing one
-      let tempClientId = "";
-      
-      console.log("🟨 Tentando criar cliente temporário...");
-      try {
-        // Try to create a temporary client
-        const clientDto = {
-          name: "Cliente Temporário",
-          nuit: "000000000",
-          contact: "000000000",
-          category: "Temporário",
-          requisition: "",
-          observations: "Cliente temporário - será removido se pedido for cancelado"
-        };
-        
-        const tempClient = await invoke<any>("create_client", { dto: clientDto });
-        tempClientId = tempClient.id;
-        setTemporaryClientId(tempClient.id);
-        
-      } catch (clientError) {
-        console.error("❌ Erro ao criar cliente temporário:", clientError);
-        // Try to get the first available client as fallback
-        const clients = await invoke<any[]>("list_clients");
-        if (clients.length > 0) {
-          tempClientId = clients[0].id;
-          console.log("🟨 Usando cliente existente:", clients[0]);
-        } else {
-          throw new Error("Nenhum cliente disponível");
-        }
-      }
-
-      // Criar order temporária com dados mínimos
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      
-      const tempOrderData = {
-        name: "Pedido Temporário",
-        client_id: tempClientId,
-        due_date: `${year}-${month}-${day}`,
-        iva: 16.0,
-        discount: 0.0,
-        status: "order_received",
-      };
-
-      const tempOrder = await invoke<Order>("create_order", { dto: tempOrderData });
-      setTemporaryOrderId(tempOrder.id);
-      
-      return tempOrder;
-    } catch (error) {
-      console.error("❌ Erro ao criar order temporária:", error);
-      return null;
-    }
   };
 
   const loadOrderClothesLocal = async (orderId: string) => {
@@ -395,9 +310,11 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     }
   };
 
-
-
-
+  console.log("🔵 Orders - Antes do return, estado final:", {
+    isClothesModalOpen,
+    selectedOrderForClothes,
+    filteredOrdersCount: filteredOrders.length
+  });
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -648,7 +565,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
               min="0"
               max="100"
               step="0.01"
-              className="input-dark w-full px-4 py-2 rounded-lg"
+              className="inputCurrency"
               placeholder="16"
             />
           </div>
@@ -830,14 +747,28 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
       />
 
       {/* Modal de roupas */}
-      {selectedOrderForClothes && (
-        <ClothesModal
-          isOpen={isClothesModalOpen}
-          onClose={handleCloseClothesModal}
-          orderId={selectedOrderForClothes}
-          onClothesAdded={handleClothesAdded}
-        />
-      )}
+      {(() => {
+        console.log("🔵 Orders - Renderizando ClothesModal:", {
+          selectedOrderForClothes,
+          isClothesModalOpen,
+          shouldRender: selectedOrderForClothes && isClothesModalOpen
+        });
+        
+        if (selectedOrderForClothes && isClothesModalOpen) {
+          console.log("🔵 Orders - ClothesModal será renderizado para orderId:", selectedOrderForClothes);
+          return (
+            <ClothesModal
+              isOpen={isClothesModalOpen}
+              onClose={handleCloseClothesModal}
+              orderId={selectedOrderForClothes}
+              onClothesAdded={handleClothesAdded}
+            />
+          );
+        } else {
+          console.log("🔵 Orders - ClothesModal não será renderizado");
+          return null;
+        }
+      })()}
     </div>
   );
 }

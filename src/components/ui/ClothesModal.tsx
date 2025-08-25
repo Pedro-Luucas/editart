@@ -30,6 +30,7 @@ interface ServiceFormData {
 
 export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded }: ClothesModalProps) {
   console.log("🟠 ClothesModal renderizado com props:", { isOpen, orderId, onClothesAdded: !!onClothesAdded });
+  console.log("🟠 ClothesModal - Stack trace:", new Error().stack?.split('\n').slice(1, 4).join('\n'));
   
   // Store actions
   const addClothesToOrder = useOrderStore(state => state.addClothesToOrder);
@@ -62,7 +63,10 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
 
   // Reset form when modal opens/closes
   useEffect(() => {
+    console.log("🟠 ClothesModal useEffect [isOpen] executado, isOpen:", isOpen);
+    console.log("🟠 ClothesModal useEffect - Stack trace:", new Error().stack?.split('\n').slice(1, 4).join('\n'));
     if (isOpen) {
+      console.log("🟠 ClothesModal - Resetando formulário");
       setClothingType('with_collar');
       setCustomType("");
       setUnitPrice(0);
@@ -73,6 +77,18 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
       setError("");
     }
   }, [isOpen]);
+
+  console.log("🟠 ClothesModal - Estado interno atual:", {
+    loading,
+    error,
+    clothingType,
+    customType,
+    unitPrice,
+    color,
+    sizes,
+    services: services.length,
+    showServiceForm
+  });
 
   const handleSizeChange = (size: ClothingSize, value: number) => {
     setSizes(prev => ({
@@ -203,6 +219,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
   }
   
   console.log("🟠 ClothesModal será renderizado - isOpen:", isOpen, "orderId:", orderId);
+  console.log("🟠 ClothesModal - Renderizando JSX completo");
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -214,7 +231,10 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
             <h2 className="text-xl font-semibold text-gray-900">Adicionar Roupas</h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              console.log("🟠 ClothesModal - Botão fechar clicado");
+              onClose();
+            }}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-6 h-6" />
@@ -483,7 +503,10 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
           </Button>
           <Button
             type="button"
-            onClick={handleSubmit}
+            onClick={() => {
+              console.log("🟠 ClothesModal - Botão submit clicado");
+              handleSubmit();
+            }}
             disabled={loading || getTotalQuantity() === 0}
           >
             {loading ? "Criando..." : "Adicionar Roupas"}

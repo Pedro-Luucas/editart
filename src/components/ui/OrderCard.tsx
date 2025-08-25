@@ -28,9 +28,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onView,
   onEdit,
   onDelete,
-  onAddClothes,
-  onCopyId
+  onAddClothes
 }) => {
+  console.log("🟡 OrderCard renderizado para order:", order.id, "name:", order.name);
+  
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-MZ', {
       style: 'currency',
@@ -70,6 +71,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
       </div>
     );
   };
+
+  const handleAddClothes = () => {
+    console.log("🟡 OrderCard.handleAddClothes chamado para order:", order.id);
+    onAddClothes(order.id);
+  };
+
+  console.log("🟡 OrderCard finalizando renderização para order:", order.id);
 
   return (
     <div className="glass-effect p-5 rounded-xl hover-lift">
@@ -155,18 +163,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <Edit className="w-4 h-4" />
           </Button>
           <Button
-            onClick={() => onAddClothes(order.id)}
+            onClick={handleAddClothes}
             className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm bg-green-600 hover:bg-green-700"
             title="Adicionar roupas"
           >
             <Shirt className="w-4 h-4" />
-          </Button>
-          <Button
-            onClick={() => onCopyId(order.id)}
-            className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
-            title="Copiar ID"
-          >
-            <Copy className="w-4 h-4" />
           </Button>
           <Button
             onClick={() => onDelete(order.id)}
