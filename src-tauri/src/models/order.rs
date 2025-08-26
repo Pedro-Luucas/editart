@@ -25,6 +25,8 @@ pub struct Order {
     pub id: String,
     pub name: String,
     pub client_id: String,
+    pub order_number: i32,
+    pub client_requisition_number: i32,
     pub due_date: Date,
     pub discount: f64,
     pub iva: f64,

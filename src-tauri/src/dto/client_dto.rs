@@ -7,7 +7,6 @@ pub struct CreateClientDto {
     pub nuit: String,
     pub contact: String,
     pub category: String,
-    pub requisition: String,
     pub observations: String,
 }
 
@@ -17,7 +16,6 @@ pub struct UpdateClientDto {
     pub nuit: Option<String>,
     pub contact: Option<String>,
     pub category: Option<String>,
-    pub requisition: Option<String>,
     pub observations: Option<String>,
 }
 
@@ -28,7 +26,6 @@ pub struct ClientResponseDto {
     pub nuit: String,
     pub contact: String,
     pub category: String,
-    pub requisition: String,
     pub observations: String,
     #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
@@ -44,7 +41,6 @@ impl From<crate::models::Client> for ClientResponseDto {
             nuit: client.nuit,
             contact: client.contact,
             category: client.category,
-            requisition: client.requisition,
             observations: client.observations,
             created_at: client.created_at,
             updated_at: client.updated_at,

@@ -2,18 +2,11 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { RotateCcw, Plus, Edit, Copy, Trash2, UserPlus, X } from 'lucide-react';
 import { Button } from "../components/ui/button";
-import SidePanel from "../components/ui/SidePanel";
 import { formatDateOnly } from "../utils/dateUtils.ts";
 import { Client } from "../types/client";
+import ClientSidePanel from "../components/clients/ClientSidePanel";
 
-interface CreateClientDto {
-  name: string;
-  nuit: string;
-  contact: string;
-  category: string;
-  requisition: string;
-  observations: string;
-}
+
 
 export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -23,18 +16,7 @@ export default function Clients() {
   
   // SidePanel state
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  
-  // Form state
-  const [formData, setFormData] = useState<CreateClientDto>({
-    name: "",
-    nuit: "",
-    contact: "",
-    category: "",
-    requisition: "",
-    observations: "",
-  });
 
   useEffect(() => {
     loadClients();
@@ -81,32 +63,11 @@ export default function Clients() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   const handleOpenPanel = (client?: Client) => {
     if (client) {
       setEditingClient(client);
-      setFormData({
-        name: client.name,
-        nuit: client.nuit,
-        contact: client.contact,
-        category: client.category,
-        requisition: client.requisition,
-        observations: client.observations,
-      });
     } else {
       setEditingClient(null);
-      setFormData({
-        name: "",
-        nuit: "",
-        contact: "",
-        category: "",
-        requisition: "",
-        observations: "",
-      });
     }
     setIsPanelOpen(true);
   };
@@ -114,27 +75,17 @@ export default function Clients() {
   const handleClosePanel = () => {
     setIsPanelOpen(false);
     setEditingClient(null);
-    setFormData({
-      name: "",
-      nuit: "",
-      contact: "",
-      category: "",
-      requisition: "",
-      observations: "",
-    });
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    
+  const handleSaveClient = async (clientData: any) => {
     try {
       if (editingClient) {
         // Update client (quando implementado)
-        // await invoke("update_client", { id: editingClient.id, dto: formData });
+        // await invoke("update_client", { id: editingClient.id, dto: clientData });
         alert("Edição de clientes será implementada em breve");
       } else {
         // Create client
-        await invoke("create_client", { dto: formData });
+        await invoke("create_client", { dto: clientData });
         await loadClients(); // Recarregar lista
       }
       
@@ -142,8 +93,6 @@ export default function Clients() {
     } catch (error) {
       console.error("Erro ao salvar cliente:", error);
       alert("Erro ao salvar cliente: " + error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -279,7 +228,13 @@ export default function Clients() {
                     </div>
                     <div>
                       <p className="text-xs text-primary-400 mb-1 uppercase tracking-wide">Contato</p>
-                      <p className="text-primary-100 font-semibold">{client.contact}</p>
+                      <div className="text-primary-100 font-semibold">
+                        {client.contact.split(',').map((contact, index) => (
+                          <p key={index} className="mb-1 last:mb-0">
+                            {contact.trim()}
+                          </p>
+                        ))}
+                      </div>
                     </div>
                     <div>
                       <p className="text-xs text-primary-400 mb-1 uppercase tracking-wide">Categoria</p>
@@ -290,10 +245,6 @@ export default function Clients() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-xs text-primary-400 mb-1 uppercase tracking-wide">Requisição</p>
-                      <p className="text-primary-200 text-sm leading-relaxed">{client.requisition}</p>
-                    </div>
                     {client.observations && (
                       <div>
                         <p className="text-xs text-primary-400 mb-1 uppercase tracking-wide">Observações</p>
@@ -324,14 +275,6 @@ export default function Clients() {
                     Editar
                   </Button>
                   <Button
-                    onClick={() => navigator.clipboard.writeText(client.id)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
-                    title="Copiar ID"
-                  >
-                    <Copy className="w-4 h-4" />
-                    ID
-                  </Button>
-                  <Button
                     onClick={() => handleDeleteClient(client.id)}
                     variant="destructive"
                     className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover-lift transition-all text-sm"
@@ -347,106 +290,13 @@ export default function Clients() {
         </div>
       )}
 
-      {/* SidePanel para adicionar/editar cliente */}
-      <SidePanel
+      {/* ClientSidePanel para adicionar/editar cliente */}
+      <ClientSidePanel
         isOpen={isPanelOpen}
+        editingClient={editingClient || undefined}
         onClose={handleClosePanel}
-        onCancel={handleClosePanel}
-        onSave={handleSubmit}
-        title={editingClient ? 'Editar Cliente' : 'Novo Cliente'}
-        isLoading={isSubmitting}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Nome <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-              className="input-dark w-full px-4 py-2 rounded-lg"
-              placeholder="Nome completo do cliente"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              NUIT <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              name="nuit"
-              value={formData.nuit}
-              onChange={handleInputChange}
-              required
-              className="input-dark w-full px-4 py-2 rounded-lg font-mono"
-              placeholder="Número único de identificação tributária"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Contato <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              name="contact"
-              value={formData.contact}
-              onChange={handleInputChange}
-              required
-              className="input-dark w-full px-4 py-2 rounded-lg"
-              placeholder="Telefone, email ou outros contatos"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Categoria <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              required
-              className="input-dark w-full px-4 py-2 rounded-lg"
-              placeholder="Categoria do cliente"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Requisição <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              name="requisition"
-              value={formData.requisition}
-              onChange={handleInputChange}
-              required
-              className="input-dark w-full px-4 py-2 rounded-lg"
-              placeholder="Tipo de requisição ou serviço"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-primary-300 mb-2">
-              Observações
-            </label>
-            <textarea
-              name="observations"
-              value={formData.observations}
-              onChange={handleInputChange}
-              rows={4}
-              className="input-dark w-full px-4 py-2 rounded-lg resize-vertical"
-              placeholder="Observações adicionais (opcional)"
-            />
-          </div>
-        </div>
-      </SidePanel>
+        onSave={handleSaveClient}
+      />
     </div>
   );
 }

@@ -6,6 +6,8 @@ export interface Order {
   client_id: string;
   client_name: string;
   client_contact: string;
+  order_number: number;
+  client_requisition_number: number;
   due_date: string; // Date como string
   discount: number;
   iva: number;

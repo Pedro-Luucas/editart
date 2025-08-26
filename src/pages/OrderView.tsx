@@ -14,7 +14,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  XCircle
+  XCircle,
+  Hash
 } from 'lucide-react';
 import { Button } from "../components/ui/button";
 import { formatDateTime, formatDateOnly } from "../utils/dateUtils";
@@ -199,9 +200,17 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
             <h1 className="text-3xl font-bold text-gradient-secondary mb-2">
               {order.name}
             </h1>
-            <p className="text-primary-400">
-              Pedido #{order.id.slice(0, 8)}...
-            </p>
+            <div className="flex items-center gap-4 text-primary-400">
+              <p>Pedido #{order.id.slice(0, 8)}...</p>
+              <div className="flex items-center gap-2">
+                <Hash className="w-4 h-4" />
+                <span>#{order.order_number}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                <span>Requisição #{order.client_requisition_number}</span>
+              </div>
+            </div>
           </div>
           {getStatusBadge(order.status)}
         </div>
@@ -238,12 +247,6 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
                   <label className="block text-sm font-medium text-primary-400 mb-1">Categoria</label>
                   <p className="text-primary-100">{client.category}</p>
                 </div>
-                {client.requisition && (
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-primary-400 mb-1">Requisição</label>
-                    <p className="text-primary-100">{client.requisition}</p>
-                  </div>
-                )}
                 {client.observations && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-primary-400 mb-1">Observações</label>
@@ -292,13 +295,13 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
           <div className="glass-effect p-6 rounded-xl">
             <h2 className="text-xl font-bold text-primary-100 mb-4 flex items-center gap-2">
               <Shirt className="w-5 h-5" />
-              Roupas do Pedido ({clothes.length} {clothes.length === 1 ? 'item' : 'itens'})
+              Produtos do Pedido ({clothes.length} {clothes.length === 1 ? 'item' : 'itens'})
             </h2>
             
             {clothes.length === 0 ? (
               <div className="text-center py-8 text-primary-400">
                 <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Nenhuma roupa adicionada a este pedido.</p>
+                <p>Nenhum produto adicionado a este pedido.</p>
               </div>
             ) : (
               <div className="space-y-4">

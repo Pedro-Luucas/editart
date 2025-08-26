@@ -171,7 +171,7 @@ export default function ClientSelectModal({
                         )}
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-primary-400" />
                           <span className="text-primary-400">NUIT:</span>
@@ -190,12 +190,6 @@ export default function ClientSelectModal({
                           <span className="inline-block px-2 py-1 bg-teal-600 text-primary-100 rounded-full text-xs font-semibold">
                             {client.category}
                           </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-primary-400" />
-                          <span className="text-primary-400">Requisição:</span>
-                          <span className="text-primary-200 truncate">{client.requisition}</span>
                         </div>
                       </div>
                     </div>

@@ -7,7 +7,6 @@ interface CreateClientDto {
   nuit: string;
   contact: string;
   category: string;
-  requisition: string;
   observations: string;
 }
 
@@ -17,7 +16,6 @@ export default function ClientForm() {
     nuit: "",
     contact: "",
     category: "",
-    requisition: "",
     observations: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +42,6 @@ export default function ClientForm() {
         nuit: "",
         contact: "",
         category: "",
-        requisition: "",
         observations: "",
       });
     } catch (error) {
@@ -119,22 +116,6 @@ export default function ClientForm() {
             id="category"
             name="category"
             value={formData.category}
-            onChange={handleInputChange}
-            required
-            disabled={isLoading}
-            className="input-dark w-full px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="requisition" className="block text-sm font-medium text-primary-300 mb-2">
-            Requisição *
-          </label>
-          <input
-            type="text"
-            id="requisition"
-            name="requisition"
-            value={formData.requisition}
             onChange={handleInputChange}
             required
             disabled={isLoading}

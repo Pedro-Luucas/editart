@@ -43,7 +43,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const isPanelOpen = useIsPanelOpen();
   const editingOrder = useEditingOrder();
   
-
+  
   
   console.log("🔵 Orders - Estado atual:", {
     ordersCount: orders.length,
@@ -283,8 +283,8 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
               onEdit={handleOpenPanel}
               onDelete={handleDeleteOrder}
               onAddClothes={(orderId) => {
-                console.log("🟡 Botão de roupas clicado no card, order.id:", orderId);
-                // Abrir o SidePanel para editar o pedido e adicionar roupas
+                console.log("🟡 Botão de produtos clicado no card, order.id:", orderId);
+                // Abrir o SidePanel para editar o pedido e adicionar produtos
                 handleOpenPanel(order);
               }}
               onCopyId={(orderId) => navigator.clipboard.writeText(orderId)}

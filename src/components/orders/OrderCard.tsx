@@ -8,7 +8,9 @@ import {
   Shirt,
   Eye,
   CheckCircle,
-  XCircle
+  XCircle,
+  Hash,
+  FileText
 } from 'lucide-react';
 import { Button } from "../ui/button";
 import { formatDateTime, formatDateOnly } from "../../utils/dateUtils";
@@ -85,17 +87,31 @@ const OrderCard: React.FC<OrderCardProps> = ({
         {/* Header com status */}
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-primary-100 mb-1">
-              {order.name}
+            <h3 className="text-lg font-bold text-primary-100 mb-1 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              {order.client_name}
             </h3>
             <p className="text-primary-400 text-sm flex items-center gap-1">
-              <User className="w-3 h-3" />
-              {order.client_name} - {order.client_contact}
+              {order.name} 
             </p>
           </div>
           <div className="flex flex-col gap-2 items-end">
             {getStatusBadge(order.status)}
             {getPaidBadge(order.paid)}
+          </div>
+        </div>
+
+        {/* Números do pedido */}
+        <div className="flex gap-4 text-sm">
+          <div className="flex items-center gap-2 text-primary-300">
+            <Hash className="w-4 h-4" />
+            <span className="text-primary-400">Pedido:</span>
+            <span className="font-semibold text-primary-100">#{order.order_number}</span>
+          </div>
+          <div className="flex items-center gap-2 text-primary-300">
+            <FileText className="w-4 h-4" />
+            <span className="text-primary-400">Requisição:</span>
+            <span className="font-semibold text-primary-100">#{order.client_requisition_number}</span>
           </div>
         </div>
 
@@ -165,7 +181,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <Button
             onClick={handleAddClothes}
             className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm bg-green-600 hover:bg-green-700"
-            title="Adicionar roupas"
+            title="Adicionar produtos"
           >
             <Shirt className="w-4 h-4" />
           </Button>

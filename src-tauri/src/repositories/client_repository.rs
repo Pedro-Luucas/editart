@@ -6,15 +6,15 @@ use uuid::Uuid;
 pub struct ClientRepository;
 
 impl ClientRepository {
-    pub async fn create(&self, name: String, nuit: String, contact: String, category: String, requisition: String, observations: String) -> Result<Client, String> {
+    pub async fn create(&self, name: String, nuit: String, contact: String, category: String, observations: String) -> Result<Client, String> {
         let pool = get_db_pool()?;
         let id = Uuid::new_v4().to_string();
         let now = OffsetDateTime::now_utc();
 
         let client = sqlx::query_as::<_, Client>(
             r#"
-            INSERT INTO clients (id, name, nuit, contact, category, requisition, observations, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            INSERT INTO clients (id, name, nuit, contact, category, observations, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
             "#,
         )
@@ -23,7 +23,6 @@ impl ClientRepository {
         .bind(&nuit)
         .bind(&contact)
         .bind(&category)
-        .bind(&requisition)
         .bind(&observations)
         .bind(now)
         .bind(now)
@@ -75,7 +74,7 @@ impl ClientRepository {
         Ok(clients)
     }
 
-    pub async fn update(&self, id: &str, name: Option<String>, nuit: Option<String>, contact: Option<String>, category: Option<String>, requisition: Option<String>, observations: Option<String>) -> Result<Option<Client>, String> {
+    pub async fn update(&self, id: &str, name: Option<String>, nuit: Option<String>, contact: Option<String>, category: Option<String>, observations: Option<String>) -> Result<Option<Client>, String> {
         let pool = get_db_pool()?;
         let now = OffsetDateTime::now_utc();
 
@@ -91,13 +90,12 @@ impl ClientRepository {
         let updated_nuit = nuit.unwrap_or(current_client.nuit);
         let updated_contact = contact.unwrap_or(current_client.contact);
         let updated_category = category.unwrap_or(current_client.category);
-        let updated_requisition = requisition.unwrap_or(current_client.requisition);
         let updated_observations = observations.unwrap_or(current_client.observations);
 
         let client = sqlx::query_as::<_, Client>(
             r#"
             UPDATE clients 
-            SET name = $2, nuit = $3, contact = $4, category = $5, requisition = $6, observations = $7, updated_at = $8
+            SET name = $2, nuit = $3, contact = $4, category = $5, observations = $6, updated_at = $7
             WHERE id = $1
             RETURNING *
             "#,
@@ -107,7 +105,6 @@ impl ClientRepository {
         .bind(updated_nuit)
         .bind(updated_contact)
         .bind(updated_category)
-        .bind(updated_requisition)
         .bind(updated_observations)
         .bind(now)
         .fetch_optional(pool)

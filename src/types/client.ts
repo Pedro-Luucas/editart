@@ -4,7 +4,6 @@ export interface Client {
   nuit: string;
   contact: string;
   category: string;
-  requisition: string;
   observations: string;
   created_at: string; // TIMESTAMPTZ como string
   updated_at: string; // TIMESTAMPTZ como string
@@ -15,7 +14,6 @@ export interface CreateClientDto {
   nuit: string;
   contact: string;
   category: string;
-  requisition: string;
   observations: string;
 }
 
@@ -24,6 +22,5 @@ export interface UpdateClientDto {
   nuit?: string;
   contact?: string;
   category?: string;
-  requisition?: string;
   observations?: string;
 }

@@ -59,7 +59,6 @@ export default function OrderSidePanel({
         contact: editingOrder.client_contact,
         nuit: "",
         category: "",
-        requisition: "",
         observations: "",
         created_at: "",
         updated_at: "",
@@ -162,13 +161,13 @@ export default function OrderSidePanel({
       const clothes = await invoke<Clothes[]>("get_order_clothes", { orderId });
       setOrderClothes(clothes);
     } catch (error) {
-      console.error("Erro ao carregar roupas:", error);
+              console.error("Erro ao carregar produtos:", error);
       setOrderClothes([]);
     }
   };
 
   const handleDeleteClothes = async (clothesId: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta roupa?")) {
+            if (!confirm("Tem certeza que deseja excluir este produto?")) {
       return;
     }
 
@@ -178,8 +177,8 @@ export default function OrderSidePanel({
         loadOrderClothes(editingOrder.id);
       }
     } catch (err) {
-      console.error("Erro ao excluir roupa:", err);
-      alert("Erro ao excluir roupa: " + err);
+              console.error("Erro ao excluir produto:", err);
+              alert("Erro ao excluir produto: " + err);
     }
   };
 
@@ -213,7 +212,7 @@ export default function OrderSidePanel({
                 : 'text-primary-300 hover:text-white hover:bg-primary-700'
             }`}
           >
-            Roupas
+            Produtos
           </button>
         </div>
 
@@ -334,7 +333,7 @@ export default function OrderSidePanel({
             <div className="p-3 bg-primary-700/50 rounded-lg border border-primary-600">
               <p className="text-primary-300 text-sm">
                 <strong>Nota:</strong> Os valores de subtotal e total serão calculados automaticamente 
-                com base nas roupas adicionadas.
+                com base nos produtos adicionados.
               </p>
             </div>
           </div>
@@ -342,22 +341,22 @@ export default function OrderSidePanel({
           /* Clothes Tab */
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium text-primary-200">Roupas do Pedido</h3>
+              <h3 className="text-lg font-medium text-primary-200">Produtos do Pedido</h3>
               <Button
                 onClick={() => editingOrder && openClothesModal(editingOrder.id)}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg"
               >
                 <Plus className="w-4 h-4" />
-                Adicionar Roupas
+                Adicionar Produtos
               </Button>
             </div>
 
-            {/* Lista de roupas */}
+                          {/* Lista de produtos */}
             {orderClothes.length === 0 ? (
               <div className="text-center py-8 text-primary-400">
                 <Shirt className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Nenhuma roupa adicionada ainda.</p>
-                <p className="text-sm">Clique em "Adicionar Roupas" para começar.</p>
+                <p>Nenhum produto adicionado ainda.</p>
+                                  <p className="text-sm">Clique em "Adicionar Produtos" para começar.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -448,7 +447,7 @@ export default function OrderSidePanel({
                 {/* Resumo total */}
                 <div className="bg-green-900/30 p-4 rounded-lg border border-green-600">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-green-200">Total de Roupas:</span>
+                    <span className="font-medium text-green-200">Total de Produtos:</span>
                     <span className="text-xl font-bold text-green-400">
                       {orderClothes.reduce((sum, clothes) => 
                         sum + ((clothes.unit_price + clothes.services.reduce((s, srv) => s + srv.unit_price, 0)) * clothes.total_quantity), 0
@@ -470,7 +469,7 @@ export default function OrderSidePanel({
         selectedClientId={selectedClient?.id}
       />
 
-      {/* Modal de roupas */}
+                    {/* Modal de produtos */}
       {selectedOrderForClothes && isClothesModalOpen && (
         <ClothesModal
           isOpen={isClothesModalOpen}

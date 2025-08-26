@@ -190,7 +190,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
       const success = await addClothesToOrder(orderId, createClothesData);
 
       if (success) {
-        console.log("🟠 Roupa criada com sucesso através do store");
+        console.log("🟠 Produto criado com sucesso através do store");
         
         // Also refresh orders to update totals
         await loadOrders();
@@ -200,13 +200,13 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
           onClothesAdded();
         }
       } else {
-        throw new Error("Erro ao criar roupa através do store");
+        throw new Error("Erro ao criar produto através do store");
       }
       
       console.log("🟠 Fechando modal");
       onClose();
     } catch (err) {
-      console.error("Erro ao criar roupa:", err);
+              console.error("Erro ao criar produto:", err);
       setError(err as string);
     } finally {
       setLoading(false);
@@ -228,7 +228,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
             <Shirt className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Adicionar Roupas</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Adicionar Produtos</h2>
           </div>
           <button
             onClick={() => {
@@ -253,7 +253,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tipo de Roupa
+                Tipo de Produto
               </label>
               <select
                 value={clothingType}
@@ -275,7 +275,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                   type="text"
                   value={customType}
                   onChange={(e) => setCustomType(e.target.value)}
-                  placeholder="Descreva o tipo de roupa"
+                  placeholder="Descreva o tipo de produto"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -509,7 +509,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
             }}
             disabled={loading || getTotalQuantity() === 0}
           >
-            {loading ? "Criando..." : "Adicionar Roupas"}
+            {loading ? "Criando..." : "Adicionar Produtos"}
           </Button>
         </div>
       </div>

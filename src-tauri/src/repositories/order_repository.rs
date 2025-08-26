@@ -26,16 +26,35 @@ impl OrderRepository {
             return Err("Client not found".to_string());
         }
 
+        // Get the next order number (global sequence)
+        let order_number: i32 = sqlx::query_scalar::<_, i32>(
+            "SELECT COALESCE(MAX(order_number), 0) + 1 FROM orders"
+        )
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to get next order number: {}", e))?;
+
+        // Get the next client requisition number for this specific client
+        let client_requisition_number: i32 = sqlx::query_scalar::<_, i32>(
+            "SELECT COALESCE(MAX(client_requisition_number), 0) + 1 FROM orders WHERE client_id = $1"
+        )
+        .bind(&client_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to get next client requisition number: {}", e))?;
+
         let order = sqlx::query_as::<_, Order>(
             r#"
-            INSERT INTO orders (id, name, client_id, due_date, discount, iva, subtotal, total, status, paid, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO orders (id, name, client_id, order_number, client_requisition_number, due_date, discount, iva, subtotal, total, status, paid, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING *
             "#,
         )
         .bind(&id)
         .bind(&name)
         .bind(&client_id)
+        .bind(order_number)
+        .bind(client_requisition_number)
         .bind(due_date)
         .bind(discount_value)
         .bind(iva)
@@ -179,6 +198,28 @@ impl OrderRepository {
             .execute(pool)
             .await
             .map_err(|e| format!("Failed to delete order: {}", e))?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
+    pub async fn update_financial_values(&self, id: &str, subtotal: f64, total: f64) -> Result<bool, String> {
+        let pool = get_db_pool()?;
+        let now = OffsetDateTime::now_utc();
+
+        let result = sqlx::query(
+            r#"
+            UPDATE orders 
+            SET subtotal = $2, total = $3, updated_at = $4
+            WHERE id = $1
+            "#,
+        )
+        .bind(id)
+        .bind(subtotal)
+        .bind(total)
+        .bind(now)
+        .execute(pool)
+        .await
+        .map_err(|e| format!("Failed to update order financial values: {}", e))?;
 
         Ok(result.rows_affected() > 0)
     }

@@ -9,7 +9,6 @@ pub struct Client {
     pub nuit: String,
     pub contact: String,
     pub category: String,
-    pub requisition: String,
     pub observations: String,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,

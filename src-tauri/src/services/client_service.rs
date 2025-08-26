@@ -18,7 +18,6 @@ impl ClientService {
             dto.nuit,
             dto.contact,
             dto.category,
-            dto.requisition,
             dto.observations,
         ).await?;
 
@@ -47,7 +46,6 @@ impl ClientService {
             dto.nuit,
             dto.contact,
             dto.category,
-            dto.requisition,
             dto.observations,
         ).await?;
 

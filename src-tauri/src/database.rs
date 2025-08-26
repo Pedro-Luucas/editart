@@ -22,7 +22,6 @@ pub async fn init_database() -> Result<(), String> {
             nuit TEXT NOT NULL,
             contact TEXT NOT NULL,
             category TEXT NOT NULL,
-            requisition TEXT NOT NULL,
             observations TEXT NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -32,6 +31,25 @@ pub async fn init_database() -> Result<(), String> {
     .execute(&pool)
     .await
     .map_err(|e| format!("Failed to create clients table: {}", e))?;
+
+    // Remove requisition column if it exists (migration)
+    sqlx::query(
+        r#"
+        DO $$ 
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'clients' 
+                AND column_name = 'requisition'
+            ) THEN
+                ALTER TABLE clients DROP COLUMN requisition;
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to remove requisition column: {}", e))?;
 
     // Migrate existing table if columns are TIMESTAMP instead of TIMESTAMPTZ
     sqlx::query(
@@ -62,6 +80,8 @@ pub async fn init_database() -> Result<(), String> {
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             client_id TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+            order_number INTEGER NOT NULL,
+            client_requisition_number INTEGER NOT NULL,
             due_date DATE,
             discount DOUBLE PRECISION DEFAULT 0,
             iva DOUBLE PRECISION DEFAULT 0,
@@ -77,6 +97,77 @@ pub async fn init_database() -> Result<(), String> {
     .execute(&pool)
     .await
     .map_err(|e| format!("Failed to create orders table: {}", e))?;
+
+    // Add order_number column to existing orders table if it doesn't exist
+    sqlx::query(
+        r#"
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'orders' 
+                AND column_name = 'order_number'
+            ) THEN
+                ALTER TABLE orders ADD COLUMN order_number INTEGER NOT NULL DEFAULT 0;
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to add order_number column to orders table: {}", e))?;
+
+    // Add client_requisition_number column to existing orders table if it doesn't exist
+    sqlx::query(
+        r#"
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'orders' 
+                AND column_name = 'client_requisition_number'
+            ) THEN
+                ALTER TABLE orders ADD COLUMN client_requisition_number INTEGER NOT NULL DEFAULT 0;
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to add client_requisition_number column to orders table: {}", e))?;
+
+    // Update existing orders with sequential numbers
+    sqlx::query(
+        r#"
+        DO $$ 
+        DECLARE
+            order_rec RECORD;
+            order_counter INTEGER := 1;
+            client_counter INTEGER := 1;
+            current_client_id TEXT := '';
+        BEGIN
+            -- Update order_number for all orders
+            FOR order_rec IN SELECT id FROM orders ORDER BY created_at ASC LOOP
+                UPDATE orders SET order_number = order_counter WHERE id = order_rec.id;
+                order_counter := order_counter + 1;
+            END LOOP;
+            
+            -- Update client_requisition_number for each client
+            FOR order_rec IN SELECT id, client_id FROM orders ORDER BY created_at ASC LOOP
+                IF order_rec.client_id != current_client_id THEN
+                    current_client_id := order_rec.client_id;
+                    client_counter := 1;
+                ELSE
+                    client_counter := client_counter + 1;
+                END IF;
+                UPDATE orders SET client_requisition_number = client_counter WHERE id = order_rec.id;
+            END LOOP;
+        END $$;
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to update existing orders with sequential numbers: {}", e))?;
 
     // Add status column to existing orders table if it doesn't exist
     sqlx::query(
@@ -253,7 +344,7 @@ pub async fn init_database() -> Result<(), String> {
             "#,
         )
         .bind(&user_id)
-        .bind("user")
+        .bind("admin")
         .bind("user123")
         .bind("user")
         .bind(now)

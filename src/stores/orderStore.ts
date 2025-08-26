@@ -289,10 +289,10 @@ export const useOrderStore = create<OrderStore>()(
 
       addClothesToOrder: async (orderId: string, clothesData: any) => {
         console.log("🟠 Store.addClothesToOrder iniciado para orderId:", orderId);
-        console.log("🟠 Dados da roupa:", clothesData);
+        console.log("🟠 Dados do produto:", clothesData);
         try {
           const newClothes = await invoke<Clothes>('create_clothes', { dto: clothesData });
-          console.log("🟠 Roupa criada via Tauri:", newClothes);
+          console.log("🟠 Produto criado via Tauri:", newClothes);
           
           set(state => {
             console.log("🟠 Estado anterior do store:", {
