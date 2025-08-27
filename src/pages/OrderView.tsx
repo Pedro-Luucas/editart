@@ -15,7 +15,8 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-  Hash
+  Hash,
+  Trash2
 } from 'lucide-react';
 import { Button } from "../components/ui/button";
 import { formatDateTime, formatDateOnly } from "../utils/dateUtils";
@@ -35,6 +36,7 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
   const [clothes, setClothes] = useState<Clothes[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const [deletingClothes, setDeletingClothes] = useState<string | null>(null);
 
   useEffect(() => {
     console.log("🔵 OrderView useEffect - orderId prop:", orderId);
@@ -90,6 +92,34 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
       setError(err as string);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteClothes = async (clothesId: string) => {
+    if (!order || !confirm("Tem certeza que deseja excluir este produto?")) {
+      return;
+    }
+
+    try {
+      setDeletingClothes(clothesId);
+      
+      // Chamar a função para deletar o produto
+      const success = await invoke<boolean>("delete_clothes", { id: clothesId });
+      
+      if (success) {
+        // Remover o produto da lista local
+        setClothes(prev => prev.filter(item => item.id !== clothesId));
+        
+        // Recarregar os dados do pedido para atualizar os cálculos
+        await loadOrderData(order.id);
+      } else {
+        alert("Erro ao excluir produto");
+      }
+    } catch (err) {
+      console.error("Erro ao excluir produto:", err);
+      alert("Erro ao excluir produto: " + err);
+    } finally {
+      setDeletingClothes(null);
     }
   };
 
@@ -310,7 +340,7 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-primary-100 mb-1">
-                          {item.clothing_type === 'custom' 
+                          {item.clothing_type === 'other' 
                             ? item.custom_type 
                             : CLOTHING_TYPE_LABELS[item.clothing_type]}
                         </h3>
@@ -381,6 +411,11 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
                                     <MapPin className="w-3 h-3" />
                                     {SERVICE_LOCATION_LABELS[service.location]}
                                   </p>
+                                  {service.description && (
+                                    <p className="text-sm text-primary-400 italic mt-1">
+                                      {service.description}
+                                    </p>
+                                  )}
                                 </div>
                                 <p className="text-sm font-bold text-secondary-400">
                                   {formatCurrency(service.unit_price)}
@@ -391,6 +426,22 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
                         </div>
                       </div>
                     )}
+
+                    {/* Delete Button */}
+                    <Button
+                      onClick={() => handleDeleteClothes(item.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="mt-4 text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-red-600/30 hover:border-red-500/50"
+                      disabled={deletingClothes === item.id}
+                    >
+                      {deletingClothes === item.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-400 border-t-transparent mr-2"></div>
+                      ) : (
+                        <Trash2 className="w-4 h-4 mr-2" />
+                      )}
+                      Excluir Produto
+                    </Button>
                   </div>
                 ))}
               </div>

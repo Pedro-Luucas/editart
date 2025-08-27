@@ -50,12 +50,13 @@ impl ClothesService {
         // Create associated services
         let mut services = Vec::new();
         for service_dto in dto.services {
-            let service = self.clothing_service_repository.create(
-                clothes.id.clone(),
-                service_dto.to_service_type_string(),
-                service_dto.to_location_string(),
-                service_dto.unit_price,
-            ).await?;
+                    let service = self.clothing_service_repository.create(
+            clothes.id.clone(),
+            service_dto.to_service_type_string(),
+            service_dto.to_location_string(),
+            service_dto.description.clone(),
+            service_dto.unit_price,
+        ).await?;
             services.push(service);
         }
 
@@ -153,6 +154,7 @@ impl ClothesService {
             clothes_id.to_string(),
             dto.to_service_type_string(),
             dto.to_location_string(),
+            dto.description.clone(),
             dto.unit_price,
         ).await?;
 
@@ -174,6 +176,7 @@ impl ClothesService {
             service_id,
             dto.to_service_type_string(),
             dto.to_location_string(),
+            dto.description,
             dto.unit_price,
         ).await?;
 

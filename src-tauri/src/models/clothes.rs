@@ -5,34 +5,52 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ClothingType {
-    #[serde(rename = "with_collar")]
-    WithCollar,
-    #[serde(rename = "without_collar")]
-    WithoutCollar,
-    #[serde(rename = "thick_cap")]
-    ThickCap,
-    #[serde(rename = "simple_cap")]
-    SimpleCap,
-    #[serde(rename = "reflectors")]
-    Reflectors,
-    #[serde(rename = "uniform")]
-    Uniform,
-    #[serde(rename = "custom")]
-    Custom,
+    #[serde(rename = "collared_tshirts")]
+    CollaredTshirts,
+    #[serde(rename = "tshirts_without_collar")]
+    TshirtsWithoutCollar,
+    #[serde(rename = "uniform_shirts")]
+    UniformShirts,
+    #[serde(rename = "uniforms")]
+    Uniforms,
+    #[serde(rename = "uniform_pants")]
+    UniformPants,
+    #[serde(rename = "bags")]
+    Bags,
+    #[serde(rename = "aprons")]
+    Aprons,
+    #[serde(rename = "cloth_vests")]
+    ClothVests,
+    #[serde(rename = "reflective_vests")]
+    ReflectiveVests,
+    #[serde(rename = "thick_caps")]
+    ThickCaps,
+    #[serde(rename = "simple_caps")]
+    SimpleCaps,
+    #[serde(rename = "towels")]
+    Towels,
+    #[serde(rename = "sheets")]
+    Sheets,
+    #[serde(rename = "aprons_kitchen")]
+    ApronsKitchen,
+    #[serde(rename = "other")]
+    Other,
 }
 
 impl Default for ClothingType {
     fn default() -> Self {
-        ClothingType::WithCollar
+        ClothingType::CollaredTshirts
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ServiceType {
-    #[serde(rename = "stamping")]
-    Stamping,
     #[serde(rename = "embroidery")]
     Embroidery,
+    #[serde(rename = "stamping")]
+    Stamping,
+    #[serde(rename = "dtf")]
+    Dtf,
     #[serde(rename = "transfer")]
     Transfer,
 }
@@ -49,6 +67,20 @@ pub enum ServiceLocation {
     SleeveLeft,
     #[serde(rename = "sleeve_right")]
     SleeveRight,
+    #[serde(rename = "center_front")]
+    CenterFront,
+    #[serde(rename = "center_back")]
+    CenterBack,
+    #[serde(rename = "left_side")]
+    LeftSide,
+    #[serde(rename = "right_side")]
+    RightSide,
+    #[serde(rename = "top")]
+    Top,
+    #[serde(rename = "bottom")]
+    Bottom,
+    #[serde(rename = "custom")]
+    Custom,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -63,6 +95,8 @@ pub enum ClothingSize {
     XL,
     #[serde(rename = "XXL")]
     XXL,
+    #[serde(rename = "XXXL")]
+    XXXL,
 }
 
 // Type alias for sizes mapping
@@ -88,6 +122,7 @@ pub struct ClothingService {
     pub clothes_id: String,
     pub service_type: String, // Will be converted to/from ServiceType in DTOs
     pub location: String, // Will be converted to/from ServiceLocation in DTOs
+    pub description: Option<String>, // New description field
     pub unit_price: f64,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,

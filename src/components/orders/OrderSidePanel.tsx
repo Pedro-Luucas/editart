@@ -8,7 +8,7 @@ import ClothesModal from "../ui/ClothesModal";
 
 import { Order, OrderStatus } from "../../types/order";
 import { Client } from "../../types/client";
-import { Clothes } from "../../types/clothes";
+import { Clothes, CLOTHING_TYPE_LABELS, SERVICE_TYPE_LABELS, SERVICE_LOCATION_LABELS } from "../../types/clothes";
 
 interface OrderSidePanelProps {
   isOpen: boolean;
@@ -288,7 +288,7 @@ export default function OrderSidePanel({
                 min="0"
                 max="100"
                 step="0.01"
-                className="inputCurrency"
+                className="input-dark w-full px-4 py-2 rounded-lg"
                 placeholder="16"
               />
             </div>
@@ -365,16 +365,9 @@ export default function OrderSidePanel({
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-medium text-primary-100">
-                          {clothes.clothing_type === 'custom' 
+                          {clothes.clothing_type === 'other' 
                             ? clothes.custom_type 
-                            : Object.entries({
-                                with_collar: 'Com Gola',
-                                without_collar: 'Sem Gola', 
-                                thick_cap: 'Boné Grosso',
-                                simple_cap: 'Boné Simples',
-                                reflectors: 'Refletores',
-                                uniform: 'Fardamento'
-                              }).find(([key]) => key === clothes.clothing_type)?.[1] || clothes.clothing_type
+                            : CLOTHING_TYPE_LABELS[clothes.clothing_type] || clothes.clothing_type
                           }
                         </h4>
                         <p className="text-sm text-primary-300">Cor: {clothes.color}</p>
@@ -411,19 +404,12 @@ export default function OrderSidePanel({
                         <div className="space-y-1">
                           {clothes.services.map((service) => (
                             <div key={service.id} className="text-sm text-primary-300 bg-primary-700 px-2 py-1 rounded">
-                              {Object.entries({
-                                stamping: 'Estampagem',
-                                embroidery: 'Bordado',
-                                transfer: 'Transfer'
-                              }).find(([key]) => key === service.service_type)?.[1]} - {' '}
-                              {Object.entries({
-                                front_right: 'Frente Direita',
-                                front_left: 'Frente Esquerda',
-                                back: 'Atrás',
-                                sleeve_left: 'Manga Esquerda',
-                                sleeve_right: 'Manga Direita'
-                              }).find(([key]) => key === service.location)?.[1]} - {' '}
-                              {service.unit_price.toFixed(2)} MT
+                              {SERVICE_TYPE_LABELS[service.service_type]} - {' '}
+                              {SERVICE_LOCATION_LABELS[service.location]}
+                              {service.description && (
+                                <span className="text-primary-400 italic"> - {service.description}</span>
+                              )}
+                              {' '} - {service.unit_price.toFixed(2)} MT
                             </div>
                           ))}
                         </div>

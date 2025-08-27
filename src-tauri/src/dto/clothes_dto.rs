@@ -23,6 +23,7 @@ pub struct ClothingServiceDto {
     pub clothes_id: String,
     pub service_type: ServiceType,
     pub location: ServiceLocation,
+    pub description: Option<String>,
     pub unit_price: f64,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
@@ -43,6 +44,7 @@ pub struct CreateClothesDto {
 pub struct CreateClothingServiceDto {
     pub service_type: ServiceType,
     pub location: ServiceLocation,
+    pub description: Option<String>,
     pub unit_price: f64,
 }
 
@@ -59,19 +61,28 @@ pub struct UpdateClothesDto {
 pub struct UpdateClothingServiceDto {
     pub service_type: Option<ServiceType>,
     pub location: Option<ServiceLocation>,
+    pub description: Option<Option<String>>,
     pub unit_price: Option<f64>,
 }
 
 impl ClothesDto {
     pub fn from_model(clothes: Clothes, services: Vec<ClothingService>) -> Result<Self, String> {
         let clothing_type = match clothes.clothing_type.as_str() {
-            "with_collar" => ClothingType::WithCollar,
-            "without_collar" => ClothingType::WithoutCollar,
-            "thick_cap" => ClothingType::ThickCap,
-            "simple_cap" => ClothingType::SimpleCap,
-            "reflectors" => ClothingType::Reflectors,
-            "uniform" => ClothingType::Uniform,
-            "custom" => ClothingType::Custom,
+            "collared_tshirts" => ClothingType::CollaredTshirts,
+            "tshirts_without_collar" => ClothingType::TshirtsWithoutCollar,
+            "uniform_shirts" => ClothingType::UniformShirts,
+            "uniforms" => ClothingType::Uniforms,
+            "uniform_pants" => ClothingType::UniformPants,
+            "bags" => ClothingType::Bags,
+            "aprons" => ClothingType::Aprons,
+            "cloth_vests" => ClothingType::ClothVests,
+            "reflective_vests" => ClothingType::ReflectiveVests,
+            "thick_caps" => ClothingType::ThickCaps,
+            "simple_caps" => ClothingType::SimpleCaps,
+            "towels" => ClothingType::Towels,
+            "sheets" => ClothingType::Sheets,
+            "aprons_kitchen" => ClothingType::ApronsKitchen,
+            "other" => ClothingType::Other,
             _ => return Err(format!("Invalid clothing type: {}", clothes.clothing_type)),
         };
 
@@ -107,8 +118,9 @@ impl ClothesDto {
 impl ClothingServiceDto {
     pub fn from_model(service: ClothingService) -> Result<Self, String> {
         let service_type = match service.service_type.as_str() {
-            "stamping" => ServiceType::Stamping,
             "embroidery" => ServiceType::Embroidery,
+            "stamping" => ServiceType::Stamping,
+            "dtf" => ServiceType::Dtf,
             "transfer" => ServiceType::Transfer,
             _ => return Err(format!("Invalid service type: {}", service.service_type)),
         };
@@ -119,6 +131,13 @@ impl ClothingServiceDto {
             "back" => ServiceLocation::Back,
             "sleeve_left" => ServiceLocation::SleeveLeft,
             "sleeve_right" => ServiceLocation::SleeveRight,
+            "center_front" => ServiceLocation::CenterFront,
+            "center_back" => ServiceLocation::CenterBack,
+            "left_side" => ServiceLocation::LeftSide,
+            "right_side" => ServiceLocation::RightSide,
+            "top" => ServiceLocation::Top,
+            "bottom" => ServiceLocation::Bottom,
+            "custom" => ServiceLocation::Custom,
             _ => return Err(format!("Invalid service location: {}", service.location)),
         };
 
@@ -127,6 +146,7 @@ impl ClothingServiceDto {
             clothes_id: service.clothes_id,
             service_type,
             location,
+            description: service.description,
             unit_price: service.unit_price,
             created_at: service.created_at,
             updated_at: service.updated_at,
@@ -141,13 +161,21 @@ impl CreateClothesDto {
 
     pub fn to_clothing_type_string(&self) -> String {
         match self.clothing_type {
-            ClothingType::WithCollar => "with_collar".to_string(),
-            ClothingType::WithoutCollar => "without_collar".to_string(),
-            ClothingType::ThickCap => "thick_cap".to_string(),
-            ClothingType::SimpleCap => "simple_cap".to_string(),
-            ClothingType::Reflectors => "reflectors".to_string(),
-            ClothingType::Uniform => "uniform".to_string(),
-            ClothingType::Custom => "custom".to_string(),
+            ClothingType::CollaredTshirts => "collared_tshirts".to_string(),
+            ClothingType::TshirtsWithoutCollar => "tshirts_without_collar".to_string(),
+            ClothingType::UniformShirts => "uniform_shirts".to_string(),
+            ClothingType::Uniforms => "uniforms".to_string(),
+            ClothingType::UniformPants => "uniform_pants".to_string(),
+            ClothingType::Bags => "bags".to_string(),
+            ClothingType::Aprons => "aprons".to_string(),
+            ClothingType::ClothVests => "cloth_vests".to_string(),
+            ClothingType::ReflectiveVests => "reflective_vests".to_string(),
+            ClothingType::ThickCaps => "thick_caps".to_string(),
+            ClothingType::SimpleCaps => "simple_caps".to_string(),
+            ClothingType::Towels => "towels".to_string(),
+            ClothingType::Sheets => "sheets".to_string(),
+            ClothingType::ApronsKitchen => "aprons_kitchen".to_string(),
+            ClothingType::Other => "other".to_string(),
         }
     }
 
@@ -160,8 +188,9 @@ impl CreateClothesDto {
 impl CreateClothingServiceDto {
     pub fn to_service_type_string(&self) -> String {
         match self.service_type {
-            ServiceType::Stamping => "stamping".to_string(),
             ServiceType::Embroidery => "embroidery".to_string(),
+            ServiceType::Stamping => "stamping".to_string(),
+            ServiceType::Dtf => "dtf".to_string(),
             ServiceType::Transfer => "transfer".to_string(),
         }
     }
@@ -173,6 +202,13 @@ impl CreateClothingServiceDto {
             ServiceLocation::Back => "back".to_string(),
             ServiceLocation::SleeveLeft => "sleeve_left".to_string(),
             ServiceLocation::SleeveRight => "sleeve_right".to_string(),
+            ServiceLocation::CenterFront => "center_front".to_string(),
+            ServiceLocation::CenterBack => "center_back".to_string(),
+            ServiceLocation::LeftSide => "left_side".to_string(),
+            ServiceLocation::RightSide => "right_side".to_string(),
+            ServiceLocation::Top => "top".to_string(),
+            ServiceLocation::Bottom => "bottom".to_string(),
+            ServiceLocation::Custom => "custom".to_string(),
         }
     }
 }
@@ -180,13 +216,21 @@ impl CreateClothingServiceDto {
 impl UpdateClothesDto {
     pub fn to_clothing_type_string(&self) -> Option<String> {
         self.clothing_type.as_ref().map(|ct| match ct {
-            ClothingType::WithCollar => "with_collar".to_string(),
-            ClothingType::WithoutCollar => "without_collar".to_string(),
-            ClothingType::ThickCap => "thick_cap".to_string(),
-            ClothingType::SimpleCap => "simple_cap".to_string(),
-            ClothingType::Reflectors => "reflectors".to_string(),
-            ClothingType::Uniform => "uniform".to_string(),
-            ClothingType::Custom => "custom".to_string(),
+            ClothingType::CollaredTshirts => "collared_tshirts".to_string(),
+            ClothingType::TshirtsWithoutCollar => "tshirts_without_collar".to_string(),
+            ClothingType::UniformShirts => "uniform_shirts".to_string(),
+            ClothingType::Uniforms => "uniforms".to_string(),
+            ClothingType::UniformPants => "uniform_pants".to_string(),
+            ClothingType::Bags => "bags".to_string(),
+            ClothingType::Aprons => "aprons".to_string(),
+            ClothingType::ClothVests => "cloth_vests".to_string(),
+            ClothingType::ReflectiveVests => "reflective_vests".to_string(),
+            ClothingType::ThickCaps => "thick_caps".to_string(),
+            ClothingType::SimpleCaps => "simple_caps".to_string(),
+            ClothingType::Towels => "towels".to_string(),
+            ClothingType::Sheets => "sheets".to_string(),
+            ClothingType::ApronsKitchen => "aprons_kitchen".to_string(),
+            ClothingType::Other => "other".to_string(),
         })
     }
 
@@ -206,8 +250,9 @@ impl UpdateClothesDto {
 impl UpdateClothingServiceDto {
     pub fn to_service_type_string(&self) -> Option<String> {
         self.service_type.as_ref().map(|st| match st {
-            ServiceType::Stamping => "stamping".to_string(),
             ServiceType::Embroidery => "embroidery".to_string(),
+            ServiceType::Stamping => "stamping".to_string(),
+            ServiceType::Dtf => "dtf".to_string(),
             ServiceType::Transfer => "transfer".to_string(),
         })
     }
@@ -219,6 +264,13 @@ impl UpdateClothingServiceDto {
             ServiceLocation::Back => "back".to_string(),
             ServiceLocation::SleeveLeft => "sleeve_left".to_string(),
             ServiceLocation::SleeveRight => "sleeve_right".to_string(),
+            ServiceLocation::CenterFront => "center_front".to_string(),
+            ServiceLocation::CenterBack => "center_back".to_string(),
+            ServiceLocation::LeftSide => "left_side".to_string(),
+            ServiceLocation::RightSide => "right_side".to_string(),
+            ServiceLocation::Top => "top".to_string(),
+            ServiceLocation::Bottom => "bottom".to_string(),
+            ServiceLocation::Custom => "custom".to_string(),
         })
     }
 }

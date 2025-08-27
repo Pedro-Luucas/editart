@@ -152,6 +152,7 @@ impl ClothingServiceRepository {
         clothes_id: String, 
         service_type: String, 
         location: String,
+        description: Option<String>,
         unit_price: f64
     ) -> Result<ClothingService, String> {
         let pool = get_db_pool()?;
@@ -173,8 +174,8 @@ impl ClothingServiceRepository {
 
         let service = sqlx::query_as::<_, ClothingService>(
             r#"
-            INSERT INTO clothing_services (id, clothes_id, service_type, location, unit_price, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO clothing_services (id, clothes_id, service_type, location, description, unit_price, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
             "#,
         )
@@ -182,6 +183,7 @@ impl ClothingServiceRepository {
         .bind(&clothes_id)
         .bind(&service_type)
         .bind(&location)
+        .bind(&description)
         .bind(unit_price)
         .bind(now)
         .bind(now)
@@ -224,6 +226,7 @@ impl ClothingServiceRepository {
         id: &str, 
         service_type: Option<String>,
         location: Option<String>,
+        description: Option<Option<String>>,
         unit_price: Option<f64>
     ) -> Result<Option<ClothingService>, String> {
         let pool = get_db_pool()?;
@@ -241,8 +244,9 @@ impl ClothingServiceRepository {
             UPDATE clothing_services 
             SET service_type = $2, 
                 location = $3, 
-                unit_price = $4, 
-                updated_at = $5
+                description = $4, 
+                unit_price = $5, 
+                updated_at = $6
             WHERE id = $1
             RETURNING *
             "#,
@@ -250,6 +254,7 @@ impl ClothingServiceRepository {
         .bind(id)
         .bind(service_type.unwrap_or(current.service_type))
         .bind(location.unwrap_or(current.location))
+        .bind(description.unwrap_or(current.description))
         .bind(unit_price.unwrap_or(current.unit_price))
         .bind(now)
         .fetch_one(pool)

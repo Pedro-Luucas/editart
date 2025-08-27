@@ -289,23 +289,43 @@ pub async fn init_database() -> Result<(), String> {
     .await
     .map_err(|e| format!("Failed to create clothes table: {}", e))?;
 
-    // Create clothing_services table if not exists
-    sqlx::query(
-        r#"
-        CREATE TABLE IF NOT EXISTS clothing_services (
-            id TEXT PRIMARY KEY,
-            clothes_id TEXT NOT NULL REFERENCES clothes(id) ON DELETE CASCADE,
-            service_type TEXT NOT NULL,
-            location TEXT NOT NULL,
-            unit_price DOUBLE PRECISION NOT NULL DEFAULT 0,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            // Create clothing_services table if not exists
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS clothing_services (
+                id TEXT PRIMARY KEY,
+                clothes_id TEXT NOT NULL REFERENCES clothes(id) ON DELETE CASCADE,
+                service_type TEXT NOT NULL,
+                location TEXT NOT NULL,
+                description TEXT,
+                unit_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            "#,
         )
-        "#,
-    )
-    .execute(&pool)
-    .await
-    .map_err(|e| format!("Failed to create clothing_services table: {}", e))?;
+            .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to create clothing_services table: {}", e))?;
+
+        // Add description column to existing clothing_services table if it doesn't exist
+        sqlx::query(
+            r#"
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name = 'clothing_services' 
+                    AND column_name = 'description'
+                ) THEN
+                    ALTER TABLE clothing_services ADD COLUMN description TEXT;
+                END IF;
+            END $$;
+            "#,
+        )
+        .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to add description column to clothing_services table: {}", e))?;
 
     // Insert default users if table is empty
     let user_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")

@@ -9,6 +9,7 @@ import {
 import { Button } from "../components/ui/button";
 import OrderCard from "../components/orders/OrderCard";
 import OrderSidePanel from "../components/orders/OrderSidePanel";
+import ClothesModal from "../components/ui/ClothesModal";
 
 import { Order, OrderStatus } from "../types/order";
 
@@ -20,7 +21,9 @@ import {
   useSearchTerm,
   useStatusFilter,
   useIsPanelOpen,
-  useEditingOrder
+  useEditingOrder,
+  useSelectedOrderForClothes,
+  useIsClothesModalOpen
 } from "../stores/orderStore";
 import { useOrderStore } from "../stores/orderStore";
 
@@ -43,7 +46,9 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const isPanelOpen = useIsPanelOpen();
   const editingOrder = useEditingOrder();
   
-  
+  // ClothesModal state
+  const selectedOrderForClothes = useSelectedOrderForClothes();
+  const isClothesModalOpen = useIsClothesModalOpen();
   
   console.log("🔵 Orders - Estado atual:", {
     ordersCount: orders.length,
@@ -58,6 +63,8 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const createOrder = useOrderStore(state => state.createOrder);
   const getFilteredOrders = useOrderStore(state => state.getFilteredOrders);
   const getOrderClothes = useOrderStore(state => state.getOrderClothes);
+  const openClothesModal = useOrderStore(state => state.openClothesModal);
+  const closeClothesModal = useOrderStore(state => state.closeClothesModal);
   
   // UI actions
   const setSearchTerm = useOrderStore(state => state.setSearchTerm);
@@ -284,8 +291,8 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
               onDelete={handleDeleteOrder}
               onAddClothes={(orderId) => {
                 console.log("🟡 Botão de produtos clicado no card, order.id:", orderId);
-                // Abrir o SidePanel para editar o pedido e adicionar produtos
-                handleOpenPanel(order);
+                // Abrir o modal de produtos diretamente
+                openClothesModal(orderId);
               }}
               onCopyId={(orderId) => navigator.clipboard.writeText(orderId)}
             />
@@ -300,6 +307,20 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
         onClose={handleClosePanel}
         onSave={handleSaveOrder}
       />
+
+      {/* ClothesModal para adicionar/editar produtos */}
+      {selectedOrderForClothes && isClothesModalOpen && (
+        <ClothesModal
+          isOpen={isClothesModalOpen}
+          onClose={closeClothesModal}
+          orderId={selectedOrderForClothes}
+          onClothesAdded={() => {
+            console.log("🔵 Produtos adicionados, recarregando pedidos");
+            loadOrders();
+            closeClothesModal();
+          }}
+        />
+      )}
 
 
     </div>

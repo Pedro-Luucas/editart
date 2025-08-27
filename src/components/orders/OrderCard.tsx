@@ -98,6 +98,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <div className="flex flex-col gap-2 items-end">
             {getStatusBadge(order.status)}
             {getPaidBadge(order.paid)}
+
           </div>
         </div>
 
@@ -105,7 +106,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
         <div className="flex gap-4 text-sm">
           <div className="flex items-center gap-2 text-primary-300">
             <Hash className="w-4 h-4" />
-            <span className="text-primary-400">Pedido:</span>
             <span className="font-semibold text-primary-100">#{order.order_number}</span>
           </div>
           <div className="flex items-center gap-2 text-primary-300">
