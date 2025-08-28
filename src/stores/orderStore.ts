@@ -37,6 +37,7 @@ export interface OrderStore extends OrderData, OrderUI, OrderClothes {
   createOrder: (orderData: CreateOrderDto) => Promise<Order | null>;
   updateOrder: (id: string, updates: UpdateOrderDto) => Promise<boolean>;
   deleteOrder: (id: string) => Promise<boolean>;
+  payOrderDebt: (id: string, paymentAmount: number) => Promise<boolean>;
   
   // ===== ACTIONS DE UI =====
   setSearchTerm: (term: string) => void;
@@ -178,6 +179,31 @@ export const useOrderStore = create<OrderStore>()(
           console.error('Erro ao deletar order:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Erro ao deletar order'
+          });
+          return false;
+        }
+      },
+
+      payOrderDebt: async (id: string, paymentAmount: number) => {
+        set({ error: '' });
+        try {
+          await invoke('pay_order_debt', { id, paymentAmount });
+          // Atualizar o debt da order no estado local
+          set(state => ({
+            orders: state.orders.map(order => {
+              if (order.id === id) {
+                const newDebt = Math.max(0, order.debt - paymentAmount);
+                return { ...order, debt: newDebt };
+              }
+              return order;
+            })
+          }));
+          
+          return true;
+        } catch (error) {
+          console.error('Erro ao pagar dívida:', error);
+          set({ 
+            error: error instanceof Error ? error.message : 'Erro ao pagar dívida'
           });
           return false;
         }

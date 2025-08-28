@@ -14,7 +14,7 @@ export interface Order {
   subtotal: number;
   total: number;
   status: OrderStatus;
-  paid: boolean;
+  debt: number;
   created_at: string; // TIMESTAMPTZ como string
   updated_at: string; // TIMESTAMPTZ como string
 }
@@ -26,7 +26,6 @@ export interface CreateOrderDto {
   iva: number;
   discount?: number;
   status?: OrderStatus;
-  paid?: boolean;
 }
 
 export interface UpdateOrderDto {
@@ -38,7 +37,6 @@ export interface UpdateOrderDto {
   subtotal?: number;
   total?: number;
   status?: OrderStatus;
-  paid?: boolean;
 }
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {

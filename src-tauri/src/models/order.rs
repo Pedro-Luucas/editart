@@ -33,7 +33,7 @@ pub struct Order {
     pub subtotal: f64,
     pub total: f64,
     pub status: String, // Will be converted to/from OrderStatus in DTOs
-    pub paid: bool,
+    pub debt: f64,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
 }

@@ -43,3 +43,9 @@ pub async fn delete_order(id: String) -> Result<bool, String> {
     let service = OrderService::new();
     service.delete_order(&id).await
 }
+
+#[tauri::command]
+pub async fn pay_order_debt(id: String, payment_amount: f64) -> Result<bool, String> {
+    let service = OrderService::new();
+    service.pay_order_debt(&id, payment_amount).await
+}

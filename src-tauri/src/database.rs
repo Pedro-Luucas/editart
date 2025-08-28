@@ -88,7 +88,7 @@ pub async fn init_database() -> Result<(), String> {
             subtotal DOUBLE PRECISION NOT NULL,
             total DOUBLE PRECISION NOT NULL,
             status TEXT NOT NULL DEFAULT 'order_received',
-            paid BOOLEAN NOT NULL DEFAULT FALSE,
+            debt DOUBLE PRECISION NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
@@ -188,24 +188,43 @@ pub async fn init_database() -> Result<(), String> {
     .await
     .map_err(|e| format!("Failed to add status column to orders table: {}", e))?;
 
-    // Add paid column to existing orders table if it doesn't exist
+    // Migrate from paid to debt column
     sqlx::query(
         r#"
         DO $$ 
         BEGIN
+            -- Add debt column if it doesn't exist
             IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'orders' 
+                AND column_name = 'debt'
+            ) THEN
+                ALTER TABLE orders ADD COLUMN debt DOUBLE PRECISION NOT NULL DEFAULT 0;
+            END IF;
+            
+            -- If paid column exists, migrate data and remove it
+            IF EXISTS (
                 SELECT 1 FROM information_schema.columns 
                 WHERE table_name = 'orders' 
                 AND column_name = 'paid'
             ) THEN
-                ALTER TABLE orders ADD COLUMN paid BOOLEAN NOT NULL DEFAULT FALSE;
+                -- Update debt based on paid status and total
+                UPDATE orders 
+                SET debt = CASE 
+                    WHEN paid = true THEN 0 
+                    ELSE total 
+                END 
+                WHERE debt = 0;
+                
+                -- Remove paid column
+                ALTER TABLE orders DROP COLUMN paid;
             END IF;
         END $$;
         "#,
     )
     .execute(&pool)
     .await
-    .map_err(|e| format!("Failed to add paid column to orders table: {}", e))?;
+    .map_err(|e| format!("Failed to migrate from paid to debt column: {}", e))?;
 
     // Add name column to existing orders table if it doesn't exist
     sqlx::query(

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { 
   RotateCcw, 
   Plus, 
@@ -61,6 +60,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const deleteOrder = useOrderStore(state => state.deleteOrder);
   const updateOrder = useOrderStore(state => state.updateOrder);
   const createOrder = useOrderStore(state => state.createOrder);
+  const payOrderDebt = useOrderStore(state => state.payOrderDebt);
   const getFilteredOrders = useOrderStore(state => state.getFilteredOrders);
   const getOrderClothes = useOrderStore(state => state.getOrderClothes);
   const openClothesModal = useOrderStore(state => state.openClothesModal);
@@ -148,6 +148,41 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     } else {
       // Fallback usando hash navigation
       window.location.hash = `view-order?id=${orderId}`;
+    }
+  };
+
+  const handlePayDebt = async (orderId: string) => {
+    console.log("🔵 handlePayDebt chamado com orderId:", orderId);
+    
+    // Por enquanto, vamos apenas mostrar um alerta
+    // TODO: Implementar modal para inserir valor do pagamento
+    const paymentAmount = prompt("Digite o valor do pagamento:");
+    
+    if (paymentAmount === null) return; // Usuário cancelou
+    
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Por favor, digite um valor válido maior que zero.");
+      return;
+    }
+    
+    try {
+      // Usar a função do store para pagar a dívida
+      const success = await payOrderDebt(orderId, amount);
+      
+      
+      if (success) {
+        alert(`Pagamento de ${new Intl.NumberFormat('pt-MZ', {
+          style: 'currency',
+          currency: 'MZN'
+        }).format(amount)} realizado com sucesso!`);
+      } else {
+        alert("Erro ao processar pagamento. Verifique o console para mais detalhes.");
+      }
+      
+    } catch (error) {
+      console.error("Erro ao pagar dívida:", error);
+      alert("Erro ao processar pagamento: " + error);
     }
   };
 
@@ -295,6 +330,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
                 openClothesModal(orderId);
               }}
               onCopyId={(orderId) => navigator.clipboard.writeText(orderId)}
+              onPayDebt={handlePayDebt}
             />
           ))}
         </div>

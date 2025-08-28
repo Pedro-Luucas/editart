@@ -43,6 +43,7 @@ pub fn run() {
             list_orders,
             update_order,
             delete_order,
+            pay_order_debt,
             create_clothes,
             get_clothes_by_id,
             get_clothes_by_order_id,

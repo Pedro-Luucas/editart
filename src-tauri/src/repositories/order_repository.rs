@@ -6,12 +6,11 @@ use uuid::Uuid;
 pub struct OrderRepository;
 
 impl OrderRepository {
-    pub async fn create(&self, name: String, client_id: String, due_date: Date, iva: f64, discount: Option<f64>, status: String, paid: Option<bool>) -> Result<Order, String> {
+    pub async fn create(&self, name: String, client_id: String, due_date: Date, iva: f64, discount: Option<f64>, status: String) -> Result<Order, String> {
         let pool = get_db_pool()?;
         let id = Uuid::new_v4().to_string();
         let now = OffsetDateTime::now_utc();
         let discount_value = discount.unwrap_or(0.0);
-        let paid_value = paid.unwrap_or(false);
 
         // Validate that client exists
         let client_exists = sqlx::query_scalar::<_, bool>(
@@ -45,7 +44,7 @@ impl OrderRepository {
 
         let order = sqlx::query_as::<_, Order>(
             r#"
-            INSERT INTO orders (id, name, client_id, order_number, client_requisition_number, due_date, discount, iva, subtotal, total, status, paid, created_at, updated_at)
+            INSERT INTO orders (id, name, client_id, order_number, client_requisition_number, due_date, discount, iva, subtotal, total, status, debt, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING *
             "#,
@@ -61,7 +60,7 @@ impl OrderRepository {
         .bind(0.0) // subtotal starts at 0
         .bind(0.0) // total starts at 0
         .bind(&status)
-        .bind(paid_value)
+        .bind(0.0) // debt starts at 0
         .bind(now)
         .bind(now)
         .fetch_one(pool)
@@ -127,7 +126,7 @@ impl OrderRepository {
         Ok(orders)
     }
 
-    pub async fn update(&self, id: &str, name: Option<String>, client_id: Option<String>, due_date: Option<Date>, discount: Option<f64>, iva: Option<f64>, subtotal: Option<f64>, total: Option<f64>, status: Option<String>, paid: Option<bool>) -> Result<Option<Order>, String> {
+    pub async fn update(&self, id: &str, name: Option<String>, client_id: Option<String>, due_date: Option<Date>, discount: Option<f64>, iva: Option<f64>, subtotal: Option<f64>, total: Option<f64>, status: Option<String>) -> Result<Option<Order>, String> {
         let pool = get_db_pool()?;
         let now = OffsetDateTime::now_utc();
 
@@ -147,7 +146,6 @@ impl OrderRepository {
         let updated_subtotal = subtotal.unwrap_or(current_order.subtotal);
         let updated_total = total.unwrap_or(current_order.total);
         let updated_status = status.unwrap_or(current_order.status);
-        let updated_paid = paid.unwrap_or(current_order.paid);
 
         // Validate that client exists if client_id is being updated
         if client_id.is_some() {
@@ -167,7 +165,7 @@ impl OrderRepository {
         let order = sqlx::query_as::<_, Order>(
             r#"
             UPDATE orders 
-            SET name = $2, client_id = $3, due_date = $4, discount = $5, iva = $6, subtotal = $7, total = $8, status = $9, paid = $10, updated_at = $11
+            SET name = $2, client_id = $3, due_date = $4, discount = $5, iva = $6, subtotal = $7, total = $8, status = $9, updated_at = $10
             WHERE id = $1
             RETURNING *
             "#,
@@ -181,7 +179,6 @@ impl OrderRepository {
         .bind(updated_subtotal)
         .bind(updated_total)
         .bind(updated_status)
-        .bind(updated_paid)
         .bind(now)
         .fetch_optional(pool)
         .await
@@ -209,7 +206,7 @@ impl OrderRepository {
         let result = sqlx::query(
             r#"
             UPDATE orders 
-            SET subtotal = $2, total = $3, updated_at = $4
+            SET subtotal = $2, total = $3, debt = $3, updated_at = $4
             WHERE id = $1
             "#,
         )
@@ -304,5 +301,36 @@ impl OrderRepository {
             }
             None => Err("Client not found".to_string()),
         }
+    }
+
+    pub async fn pay_debt(&self, id: &str, payment_amount: f64) -> Result<bool, String> {
+        let pool = get_db_pool()?;
+        let now = OffsetDateTime::now_utc();
+
+        // First, get the current debt
+        let current_order = self.get_by_id(id).await?;
+        let current_order = match current_order {
+            Some(order) => order,
+            None => return Err("Order not found".to_string()),
+        };
+
+        // Calculate new debt (cannot be less than 0)
+        let new_debt = (current_order.debt - payment_amount).max(0.0);
+
+        let result = sqlx::query(
+            r#"
+            UPDATE orders 
+            SET debt = $2, updated_at = $3
+            WHERE id = $1
+            "#,
+        )
+        .bind(id)
+        .bind(new_debt)
+        .bind(now)
+        .execute(pool)
+        .await
+        .map_err(|e| format!("Failed to update order debt: {}", e))?;
+
+        Ok(result.rows_affected() > 0)
     }
 }

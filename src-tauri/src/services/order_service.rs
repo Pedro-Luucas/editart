@@ -29,7 +29,6 @@ impl OrderService {
             dto.iva,
             dto.discount,
             status_str,
-            dto.paid,
         ).await?;
 
         // Get the order with client info for the response
@@ -95,7 +94,6 @@ impl OrderService {
             dto.subtotal,
             dto.total,
             status_str,
-            dto.paid,
         ).await?;
 
         match order {
@@ -112,5 +110,13 @@ impl OrderService {
 
     pub async fn delete_order(&self, id: &str) -> Result<bool, String> {
         self.repository.delete(id).await
+    }
+
+    pub async fn pay_order_debt(&self, id: &str, payment_amount: f64) -> Result<bool, String> {
+        if payment_amount <= 0.0 {
+            return Err("Payment amount must be greater than 0".to_string());
+        }
+        
+        self.repository.pay_debt(id, payment_amount).await
     }
 }

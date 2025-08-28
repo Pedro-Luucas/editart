@@ -23,6 +23,7 @@ interface OrderCardProps {
   onDelete: (orderId: string) => void;
   onAddClothes: (orderId: string) => void;
   onCopyId: (orderId: string) => void;
+  onPayDebt: (orderId: string) => void;
 }
 
 const OrderCard: React.FC<OrderCardProps> = ({
@@ -30,7 +31,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onView,
   onEdit,
   onDelete,
-  onAddClothes
+  onAddClothes,
+  onPayDebt
 }) => {
   console.log("🟡 OrderCard renderizado para order:", order.id, "name:", order.name);
   
@@ -52,14 +54,15 @@ const OrderCard: React.FC<OrderCardProps> = ({
     );
   };
 
-  const getPaidBadge = (paid: boolean) => {
+  const getDebtBadge = (debt: number) => {
+    const isPaid = debt === 0;
     return (
       <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-        paid 
+        isPaid 
           ? 'bg-green-600 text-green-100' 
           : 'bg-red-600 text-red-100'
       }`}>
-        {paid ? (
+        {isPaid ? (
           <>
             <CheckCircle className="w-3 h-3" />
             Pago
@@ -67,7 +70,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         ) : (
           <>
             <XCircle className="w-3 h-3" />
-            Pendente
+            {formatCurrency(debt)}
           </>
         )}
       </div>
@@ -97,7 +100,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
           <div className="flex flex-col gap-2 items-end">
             {getStatusBadge(order.status)}
-            {getPaidBadge(order.paid)}
+            {getDebtBadge(order.debt)}
 
           </div>
         </div>
@@ -140,6 +143,18 @@ const OrderCard: React.FC<OrderCardProps> = ({
               <span className="text-green-400">-{formatCurrency(order.discount)}</span>
             </div>
           )}
+          
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-primary-400">Débito Pago:</span>
+            <span className="text-primary-200">{formatCurrency(order.total - order.debt)}</span>
+          </div>
+          
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-primary-400">Débito Restante:</span>
+            <span className={`font-semibold ${order.debt === 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {formatCurrency(order.debt)}
+            </span>
+          </div>
         </div>
 
         {/* Data de vencimento */}
@@ -185,6 +200,15 @@ const OrderCard: React.FC<OrderCardProps> = ({
           >
             <Shirt className="w-4 h-4" />
           </Button>
+          {order.debt > 0 && (
+            <Button
+              onClick={() => onPayDebt(order.id)}
+              className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm bg-orange-600 hover:bg-orange-700"
+              title="Pagar dívida"
+            >
+              <CheckCircle className="w-4 h-4" />
+            </Button>
+          )}
           <Button
             onClick={() => onDelete(order.id)}
             variant="destructive"

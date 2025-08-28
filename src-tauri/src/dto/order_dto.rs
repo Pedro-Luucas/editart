@@ -10,7 +10,6 @@ pub struct CreateOrderDto {
     pub iva: f64,
     pub discount: Option<f64>,
     pub status: Option<OrderStatus>,
-    pub paid: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,7 +22,6 @@ pub struct UpdateOrderDto {
     pub subtotal: Option<f64>,
     pub total: Option<f64>,
     pub status: Option<OrderStatus>,
-    pub paid: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,7 +39,7 @@ pub struct OrderResponseDto {
     pub subtotal: f64,
     pub total: f64,
     pub status: OrderStatus,
-    pub paid: bool,
+    pub debt: f64,
     #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
@@ -71,7 +69,7 @@ impl From<(crate::models::Order, String, String)> for OrderResponseDto {
             subtotal: order.subtotal,
             total: order.total,
             status,
-            paid: order.paid,
+            debt: order.debt,
             created_at: order.created_at,
             updated_at: order.updated_at,
         }
