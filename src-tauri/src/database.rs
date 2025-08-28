@@ -23,6 +23,7 @@ pub async fn init_database() -> Result<(), String> {
             contact TEXT NOT NULL,
             category TEXT NOT NULL,
             observations TEXT NOT NULL,
+            debt DOUBLE PRECISION NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
@@ -31,6 +32,25 @@ pub async fn init_database() -> Result<(), String> {
     .execute(&pool)
     .await
     .map_err(|e| format!("Failed to create clients table: {}", e))?;
+
+    // Add debt column to existing clients table if it doesn't exist
+    sqlx::query(
+        r#"
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'clients' 
+                AND column_name = 'debt'
+            ) THEN
+                ALTER TABLE clients ADD COLUMN debt DOUBLE PRECISION NOT NULL DEFAULT 0;
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to add debt column to clients table: {}", e))?;
 
     // Remove requisition column if it exists (migration)
     sqlx::query(

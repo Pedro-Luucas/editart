@@ -5,6 +5,7 @@ export interface Client {
   contact: string;
   category: string;
   observations: string;
+  debt: number;
   created_at: string; // TIMESTAMPTZ como string
   updated_at: string; // TIMESTAMPTZ como string
 }

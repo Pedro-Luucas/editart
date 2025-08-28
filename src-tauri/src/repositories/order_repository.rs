@@ -67,6 +67,10 @@ impl OrderRepository {
         .await
         .map_err(|e| format!("Failed to create order: {}", e))?;
 
+        // Update the client's total debt after creating the order
+        let client_repo = crate::repositories::ClientRepository;
+        client_repo.update_client_debt(&client_id).await?;
+
         Ok(order)
     }
 
@@ -172,7 +176,7 @@ impl OrderRepository {
         )
         .bind(id)
         .bind(updated_name)
-        .bind(updated_client_id)
+        .bind(&updated_client_id)
         .bind(updated_due_date)
         .bind(updated_discount)
         .bind(updated_iva)
@@ -184,11 +188,24 @@ impl OrderRepository {
         .await
         .map_err(|e| format!("Failed to update order: {}", e))?;
 
+        // Update the client's total debt after updating the order
+        if order.is_some() {
+            let client_repo = crate::repositories::ClientRepository;
+            client_repo.update_client_debt(&updated_client_id).await?;
+        }
+
         Ok(order)
     }
 
     pub async fn delete(&self, id: &str) -> Result<bool, String> {
         let pool = get_db_pool()?;
+
+        // First, get the current order to get client_id before deleting
+        let current_order = self.get_by_id(id).await?;
+        let client_id = match current_order {
+            Some(order) => order.client_id,
+            None => return Err("Order not found".to_string()),
+        };
 
         let result = sqlx::query("DELETE FROM orders WHERE id = $1")
             .bind(id)
@@ -196,12 +213,25 @@ impl OrderRepository {
             .await
             .map_err(|e| format!("Failed to delete order: {}", e))?;
 
+        // Update the client's total debt after deleting the order
+        if result.rows_affected() > 0 {
+            let client_repo = crate::repositories::ClientRepository;
+            client_repo.update_client_debt(&client_id).await?;
+        }
+
         Ok(result.rows_affected() > 0)
     }
 
     pub async fn update_financial_values(&self, id: &str, subtotal: f64, total: f64) -> Result<bool, String> {
         let pool = get_db_pool()?;
         let now = OffsetDateTime::now_utc();
+
+        // First, get the current order to get client_id
+        let current_order = self.get_by_id(id).await?;
+        let current_order = match current_order {
+            Some(order) => order,
+            None => return Err("Order not found".to_string()),
+        };
 
         let result = sqlx::query(
             r#"
@@ -217,6 +247,12 @@ impl OrderRepository {
         .execute(pool)
         .await
         .map_err(|e| format!("Failed to update order financial values: {}", e))?;
+
+        // Update the client's total debt
+        if result.rows_affected() > 0 {
+            let client_repo = crate::repositories::ClientRepository;
+            client_repo.update_client_debt(&current_order.client_id).await?;
+        }
 
         Ok(result.rows_affected() > 0)
     }
@@ -330,6 +366,12 @@ impl OrderRepository {
         .execute(pool)
         .await
         .map_err(|e| format!("Failed to update order debt: {}", e))?;
+
+        // Update the client's total debt after updating the order
+        if result.rows_affected() > 0 {
+            let client_repo = crate::repositories::ClientRepository;
+            client_repo.update_client_debt(&current_order.client_id).await?;
+        }
 
         Ok(result.rows_affected() > 0)
     }

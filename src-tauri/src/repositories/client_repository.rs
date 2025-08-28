@@ -13,8 +13,8 @@ impl ClientRepository {
 
         let client = sqlx::query_as::<_, Client>(
             r#"
-            INSERT INTO clients (id, name, nuit, contact, category, observations, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO clients (id, name, nuit, contact, category, observations, debt, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
             "#,
         )
@@ -24,6 +24,7 @@ impl ClientRepository {
         .bind(&contact)
         .bind(&category)
         .bind(&observations)
+        .bind(0.0) // debt starts at 0
         .bind(now)
         .bind(now)
         .fetch_one(pool)
@@ -122,6 +123,33 @@ impl ClientRepository {
             .execute(pool)
             .await
             .map_err(|e| format!("Failed to delete client: {}", e))?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
+    pub async fn update_client_debt(&self, client_id: &str) -> Result<bool, String> {
+        let pool = get_db_pool()?;
+        let now = OffsetDateTime::now_utc();
+
+        // Calculate total debt from all orders for this client
+        let total_debt: f64 = sqlx::query_scalar::<_, f64>(
+            "SELECT COALESCE(SUM(debt), 0.0) FROM orders WHERE client_id = $1"
+        )
+        .bind(client_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to calculate client debt: {}", e))?;
+
+        // Update the client's debt field
+        let result = sqlx::query(
+            "UPDATE clients SET debt = $2, updated_at = $3 WHERE id = $1"
+        )
+        .bind(client_id)
+        .bind(total_debt)
+        .bind(now)
+        .execute(pool)
+        .await
+        .map_err(|e| format!("Failed to update client debt: {}", e))?;
 
         Ok(result.rows_affected() > 0)
     }

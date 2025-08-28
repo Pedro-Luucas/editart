@@ -36,3 +36,9 @@ pub async fn delete_client(id: String) -> Result<bool, String> {
     let service = ClientService::new();
     service.delete_client(&id).await
 }
+
+#[tauri::command]
+pub async fn update_client_debt(client_id: String) -> Result<bool, String> {
+    let service = ClientService::new();
+    service.update_client_debt(&client_id).await
+}

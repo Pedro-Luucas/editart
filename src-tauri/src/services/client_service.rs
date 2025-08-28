@@ -55,4 +55,8 @@ impl ClientService {
     pub async fn delete_client(&self, id: &str) -> Result<bool, String> {
         self.repository.delete(id).await
     }
+
+    pub async fn update_client_debt(&self, client_id: &str) -> Result<bool, String> {
+        self.repository.update_client_debt(client_id).await
+    }
 }

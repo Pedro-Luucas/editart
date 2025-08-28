@@ -1,49 +1,54 @@
-import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { RotateCcw, Plus, Edit, Copy, Trash2, UserPlus, X } from 'lucide-react';
 import { Button } from "../components/ui/button";
 import { formatDateOnly } from "../utils/dateUtils.ts";
 import { Client } from "../types/client";
 import ClientSidePanel from "../components/clients/ClientSidePanel";
-
-
+import { 
+  useClients, 
+  useClientsLoading, 
+  useClientsError, 
+  useSearchTerm, 
+  useLoadClients,
+  useCreateClient,
+  useUpdateClient,
+  useDeleteClient,
+  useSetSearchTerm,
+  useGetFilteredClients
+} from "../stores/clientStore";
 
 export default function Clients() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
+  // ===== STORE HOOKS =====
+  const clients = useClients();
+  const loading = useClientsLoading();
+  const error = useClientsError();
+  const searchTerm = useSearchTerm();
   
-  // SidePanel state
+  // ===== ACTION HOOKS =====
+  const loadClients = useLoadClients();
+  const createClient = useCreateClient();
+  const updateClient = useUpdateClient();
+  const deleteClient = useDeleteClient();
+  const setSearchTerm = useSetSearchTerm();
+  const getFilteredClients = useGetFilteredClients();
+  
+  // ===== LOCAL STATE (apenas para UI específica) =====
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-  useEffect(() => {
-    loadClients();
-  }, []);
+  // Debug: log para ver quantas vezes o componente renderiza
+  console.log("🟢 Clients component renderizado");
 
-  const loadClients = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const result = await invoke<Client[]>("list_clients");
-      
-      // Debug: log para ver formato das datas
-      console.log("Clientes recebidos do backend:", result);
-      if (result.length > 0) {
-        console.log("Exemplo de client:", result[0]);
-        console.log("created_at tipo:", typeof result[0].created_at, "valor:", result[0].created_at);
-        console.log("updated_at tipo:", typeof result[0].updated_at, "valor:", result[0].updated_at);
-      }
-      
-      setClients(result);
-    } catch (err) {
-      console.error("Erro ao carregar clientes:", err);
-      setError(err as string);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    console.log("🟢 useEffect loadClients executado");
+    loadClients();
+  }, [loadClients]);
+
+  // ===== COMPUTED VALUES (MEMOIZADOS) =====
+  const filteredClients = useMemo(() => {
+    console.log("🟢 useMemo filteredClients executado");
+    return getFilteredClients();
+  }, [clients, searchTerm, getFilteredClients]);
 
   const handleDeleteClient = async (clientId: string) => {
     if (!confirm("Tem certeza que deseja excluir este cliente?")) {
@@ -51,10 +56,8 @@ export default function Clients() {
     }
 
     try {
-      const success = await invoke<boolean>("delete_client", { id: clientId });
-      if (success) {
-        setClients(clients.filter(client => client.id !== clientId));
-      } else {
+      const success = await deleteClient(clientId);
+      if (!success) {
         alert("Erro ao excluir cliente");
       }
     } catch (err) {
@@ -80,28 +83,27 @@ export default function Clients() {
   const handleSaveClient = async (clientData: any) => {
     try {
       if (editingClient) {
-        // Update client (quando implementado)
-        // await invoke("update_client", { id: editingClient.id, dto: clientData });
-        alert("Edição de clientes será implementada em breve");
+        // Update client
+        const success = await updateClient(editingClient.id, clientData);
+        if (success) {
+          handleClosePanel();
+        } else {
+          alert("Erro ao atualizar cliente");
+        }
       } else {
         // Create client
-        await invoke("create_client", { dto: clientData });
-        await loadClients(); // Recarregar lista
+        const newClient = await createClient(clientData);
+        if (newClient) {
+          handleClosePanel();
+        } else {
+          alert("Erro ao criar cliente");
+        }
       }
-      
-      handleClosePanel();
     } catch (error) {
       console.error("Erro ao salvar cliente:", error);
       alert("Erro ao salvar cliente: " + error);
     }
   };
-
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.nuit.includes(searchTerm) ||
-    client.contact.includes(searchTerm) ||
-    client.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -194,13 +196,13 @@ export default function Clients() {
               : "Nenhum cliente cadastrado ainda."}
           </p>
           {!searchTerm && (
-                      <Button
-            onClick={() => handleOpenPanel()}
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg hover-lift transition-all duration-200"
-          >
-            <UserPlus className="w-5 h-5" />
-            Cadastrar Primeiro Cliente
-          </Button>
+            <Button
+              onClick={() => handleOpenPanel()}
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg hover-lift transition-all duration-200"
+            >
+              <UserPlus className="w-5 h-5" />
+              Cadastrar Primeiro Cliente
+            </Button>
           )}
           {searchTerm && (
             <Button
@@ -242,6 +244,27 @@ export default function Clients() {
                         {client.category}
                       </span>
                     </div>
+                    <div>
+                      <p className="text-xs text-primary-400 mb-1 uppercase tracking-wide">Dívida</p>
+                      <div className={`text-lg font-bold ${client.debt > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                        {client.debt > 0 ? (
+                          <span className="flex items-center gap-1">
+                            <span className="text-red-300">-</span>
+                            {client.debt.toLocaleString('pt-BR', { 
+                              style: 'currency', 
+                              currency: 'MZN' 
+                            })}
+                          </span>
+                        ) : (
+                          <span className="text-green-300">
+                            {client.debt.toLocaleString('pt-BR', { 
+                              style: 'currency', 
+                              currency: 'MZN' 
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -259,7 +282,7 @@ export default function Clients() {
                       <span className="text-primary-300">{formatDateOnly(client.created_at)}</span>
                     </div>
                     <div>
-                      <span className="text-primary-500 font-medium">Atualizado:</span>{" "}
+                      <span className="text-xs text-primary-400 mb-1 uppercase tracking-wide">Atualizado:</span>{" "}
                       <span className="text-primary-300">{formatDateOnly(client.updated_at)}</span>
                     </div>
                   </div>

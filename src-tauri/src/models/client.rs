@@ -10,6 +10,7 @@ pub struct Client {
     pub contact: String,
     pub category: String,
     pub observations: String,
+    pub debt: f64,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
 }

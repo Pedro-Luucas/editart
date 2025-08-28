@@ -27,6 +27,7 @@ pub struct ClientResponseDto {
     pub contact: String,
     pub category: String,
     pub observations: String,
+    pub debt: f64,
     #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
@@ -42,6 +43,7 @@ impl From<crate::models::Client> for ClientResponseDto {
             contact: client.contact,
             category: client.category,
             observations: client.observations,
+            debt: client.debt,
             created_at: client.created_at,
             updated_at: client.updated_at,
         }

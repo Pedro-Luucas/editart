@@ -36,6 +36,7 @@ pub fn run() {
             list_clients,
             update_client,
             delete_client,
+            update_client_debt,
             create_order,
             get_order_by_id,
             get_orders_by_client_id,
