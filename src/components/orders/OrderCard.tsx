@@ -6,6 +6,7 @@ import {
   Calendar,
   User,
   Shirt,
+  Wallet,
   Eye,
   CheckCircle,
   XCircle,
@@ -15,6 +16,7 @@ import {
 import { Button } from "../ui/button";
 import { formatDateTime, formatDateOnly } from "../../utils/dateUtils";
 import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "../../types/order";
+import ImpressionSummary from "../impressions/ImpressionSummary";
 
 interface OrderCardProps {
   order: Order;
@@ -22,6 +24,7 @@ interface OrderCardProps {
   onEdit: (order: Order) => void;
   onDelete: (orderId: string) => void;
   onAddClothes: (orderId: string) => void;
+  onAddImpression: (orderId: string) => void;
   onCopyId: (orderId: string) => void;
   onPayDebt: (orderId: string) => void;
 }
@@ -32,6 +35,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onEdit,
   onDelete,
   onAddClothes,
+  onAddImpression,
   onPayDebt
 }) => {
   console.log("🟡 OrderCard renderizado para order:", order.id, "name:", order.name);
@@ -82,6 +86,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
     onAddClothes(order.id);
   };
 
+  const handleAddImpression = () => {
+    console.log("🟡 OrderCard.handleAddImpression chamado para order:", order.id);
+    onAddImpression(order.id);
+  };
+
   console.log("🟡 OrderCard finalizando renderização para order:", order.id);
 
   return (
@@ -117,6 +126,25 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <span className="font-semibold text-primary-100">#{order.client_requisition_number}</span>
           </div>
         </div>
+
+        {/* Contadores de produtos e impressões */}
+        <div className="flex gap-4 text-sm">
+          <div className="flex items-center gap-2 text-primary-300">
+            <Shirt className="w-4 h-4" />
+            <span className="text-primary-400">Produtos:</span>
+            <span className="font-semibold text-primary-100">{order.clothes?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-2 text-primary-300">
+            <Wallet className="w-4 h-4" />
+            <span className="text-primary-400">Impressões:</span>
+            <span className="font-semibold text-primary-100">{order.impressions?.length || 0}</span>
+          </div>
+        </div>
+
+        {/* Resumo das impressões */}
+        {order.impressions && order.impressions.length > 0 && (
+          <ImpressionSummary impressions={order.impressions} />
+        )}
 
         {/* Valores */}
         <div className="space-y-2">
@@ -199,6 +227,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
             title="Adicionar produtos"
           >
             <Shirt className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={handleAddImpression}
+            className="flex items-center justify-center px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm bg-purple-600 hover:bg-purple-700"
+            title="Adicionar impressão"
+          >
+            <Wallet className="w-4 h-4" />
           </Button>
           {order.debt > 0 && (
             <Button

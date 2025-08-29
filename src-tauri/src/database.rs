@@ -290,6 +290,25 @@ pub async fn init_database() -> Result<(), String> {
     .await
     .map_err(|e| format!("Failed to migrate orders table column types: {}", e))?;
 
+
+    sqlx::query(
+        r#"
+            CREATE TABLE IF NOT EXISTS impressions (
+            id TEXT PRIMARY KEY NOT NULL,
+            order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            size TEXT NOT NULL,
+            material TEXT NOT NULL,
+            description TEXT NOT NULL,
+            price DOUBLE PRECISION NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )"#
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("Failed to create impressions table: {}", e))?;
+
     // Create users table if not exists
     sqlx::query(
         r#"

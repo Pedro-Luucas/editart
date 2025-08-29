@@ -9,6 +9,7 @@ import { Button } from "../components/ui/button";
 import OrderCard from "../components/orders/OrderCard";
 import OrderSidePanel from "../components/orders/OrderSidePanel";
 import ClothesModal from "../components/ui/ClothesModal";
+import ImpressionModal from "../components/ui/ImpressionModal";
 
 import { Order, OrderStatus } from "../types/order";
 
@@ -24,6 +25,11 @@ import {
   useSelectedOrderForClothes,
   useIsClothesModalOpen
 } from "../stores/orderStore";
+import {
+  useSelectedOrderForImpression,
+  useIsImpressionModalOpen,
+  useImpressionStore
+} from "../stores/impressionStore";
 import { useOrderStore } from "../stores/orderStore";
 
 interface OrdersProps {
@@ -49,6 +55,10 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const selectedOrderForClothes = useSelectedOrderForClothes();
   const isClothesModalOpen = useIsClothesModalOpen();
   
+  // ImpressionModal state
+  const selectedOrderForImpression = useSelectedOrderForImpression();
+  const isImpressionModalOpen = useIsImpressionModalOpen();
+  
   console.log("🔵 Orders - Estado atual:", {
     ordersCount: orders.length,
     isPanelOpen,
@@ -65,6 +75,10 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const getOrderClothes = useOrderStore(state => state.getOrderClothes);
   const openClothesModal = useOrderStore(state => state.openClothesModal);
   const closeClothesModal = useOrderStore(state => state.closeClothesModal);
+  
+  // Impression actions
+  const openImpressionModal = useImpressionStore(state => state.openModal);
+  const closeImpressionModal = useImpressionStore(state => state.closeModal);
   
   // UI actions
   const setSearchTerm = useOrderStore(state => state.setSearchTerm);
@@ -329,6 +343,10 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
                 // Abrir o modal de produtos diretamente
                 openClothesModal(orderId);
               }}
+              onAddImpression={(orderId) => {
+                console.log("🟡 Botão de impressão clicado no card, order.id:", orderId);
+                openImpressionModal(orderId);
+              }}
               onCopyId={(orderId) => navigator.clipboard.writeText(orderId)}
               onPayDebt={handlePayDebt}
             />
@@ -354,6 +372,20 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
             console.log("🔵 Produtos adicionados, recarregando pedidos");
             loadOrders();
             closeClothesModal();
+          }}
+        />
+      )}
+
+      {/* ImpressionModal para adicionar impressões */}
+      {selectedOrderForImpression && isImpressionModalOpen && (
+        <ImpressionModal
+          isOpen={isImpressionModalOpen}
+          onClose={closeImpressionModal}
+          orderId={selectedOrderForImpression}
+          onImpressionAdded={() => {
+            console.log("🔵 Impressão adicionada, recarregando pedidos");
+            loadOrders();
+            closeImpressionModal();
           }}
         />
       )}

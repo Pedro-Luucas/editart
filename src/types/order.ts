@@ -15,6 +15,8 @@ export interface Order {
   total: number;
   status: OrderStatus;
   debt: number;
+  clothes: any[]; // TODO: Implementar store de clothes
+  impressions: any[]; // TODO: Implementar store de impressions
   created_at: string; // TIMESTAMPTZ como string
   updated_at: string; // TIMESTAMPTZ como string
 }

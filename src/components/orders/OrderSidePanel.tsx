@@ -62,7 +62,9 @@ export default function OrderSidePanel({
         observations: "",
         created_at: "",
         updated_at: "",
+        debt: editingOrder.debt,
       });
+      // Sempre carregar as roupas quando uma ordem for editada
       loadOrderClothes(editingOrder.id);
     } else {
       setFormData({
@@ -77,6 +79,15 @@ export default function OrderSidePanel({
       setOrderClothes([]);
     }
   }, [editingOrder]);
+
+  // Recarregar roupas quando mudar para a aba de produtos
+  useEffect(() => {
+    console.log("useEffect - activeTab:", activeTab, "editingOrder:", editingOrder?.id, "orderClothes.length:", orderClothes.length);
+    if (activeTab === 'clothes' && editingOrder && orderClothes.length === 0) {
+      console.log("useEffect - Recarregando roupas");
+      loadOrderClothes(editingOrder.id);
+    }
+  }, [activeTab, editingOrder, orderClothes.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -158,16 +169,28 @@ export default function OrderSidePanel({
 
   const loadOrderClothes = async (orderId: string) => {
     try {
-      const clothes = await invoke<Clothes[]>("get_order_clothes", { orderId });
+      console.log("Carregando roupas para a ordem:", orderId);
+      const clothes = await invoke<Clothes[]>("get_clothes_by_order_id", { orderId });
+      console.log("Roupas carregadas:", clothes);
       setOrderClothes(clothes);
     } catch (error) {
-              console.error("Erro ao carregar produtos:", error);
+      console.error("Erro ao carregar produtos:", error);
       setOrderClothes([]);
     }
   };
 
+  const handleTabChange = (tab: 'details' | 'clothes') => {
+    setActiveTab(tab);
+    console.log("Mudando para aba:", tab, "editingOrder:", editingOrder?.id, "orderClothes.length:", orderClothes.length);
+    // Se mudar para a aba de produtos e temos uma ordem sendo editada, recarregar as roupas
+    if (tab === 'clothes' && editingOrder && orderClothes.length === 0) {
+      console.log("Recarregando roupas para a aba de produtos");
+      loadOrderClothes(editingOrder.id);
+    }
+  };
+
   const handleDeleteClothes = async (clothesId: string) => {
-            if (!confirm("Tem certeza que deseja excluir este produto?")) {
+    if (!confirm("Tem certeza que deseja excluir este produto?")) {
       return;
     }
 
@@ -177,8 +200,8 @@ export default function OrderSidePanel({
         loadOrderClothes(editingOrder.id);
       }
     } catch (err) {
-              console.error("Erro ao excluir produto:", err);
-              alert("Erro ao excluir produto: " + err);
+      console.error("Erro ao excluir produto:", err);
+      alert("Erro ao excluir produto: " + err);
     }
   };
 
@@ -195,7 +218,7 @@ export default function OrderSidePanel({
         {/* Tabs Navigation */}
         <div className="flex space-x-1 mb-6 bg-primary-800 p-1 rounded-lg">
           <button
-            onClick={() => setActiveTab('details')}
+            onClick={() => handleTabChange('details')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'details'
                 ? 'bg-primary-600 text-white'
@@ -205,7 +228,7 @@ export default function OrderSidePanel({
             Detalhes
           </button>
           <button
-            onClick={() => setActiveTab('clothes')}
+            onClick={() => handleTabChange('clothes')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'clothes'
                 ? 'bg-primary-600 text-white'
@@ -213,7 +236,7 @@ export default function OrderSidePanel({
             }`}
           >
             Produtos
-          </button>
+        </button>
         </div>
 
         {/* Tab Content */}

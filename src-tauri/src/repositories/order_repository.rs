@@ -223,7 +223,7 @@ impl OrderRepository {
     }
 
     pub async fn update_financial_values(&self, id: &str, subtotal: f64, total: f64) -> Result<bool, String> {
-        let pool = get_db_pool()?;
+        let pool     = get_db_pool()?;
         let now = OffsetDateTime::now_utc();
 
         // First, get the current order to get client_id
