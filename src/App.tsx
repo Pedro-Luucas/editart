@@ -107,7 +107,7 @@ function App() {
       case "clients":
         return <Clients />;
       case "orders":
-        return <Orders onNavigate={handleNavigate} />;
+        return <Orders onNavigate={handleNavigate} currentUser={user || undefined} />;
       case "view-order":
         return <OrderView 
           orderId={pageParams?.id} 

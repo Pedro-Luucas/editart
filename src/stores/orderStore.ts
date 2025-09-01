@@ -38,6 +38,7 @@ export interface OrderStore extends OrderData, OrderUI, OrderClothes {
   updateOrder: (id: string, updates: UpdateOrderDto) => Promise<boolean>;
   deleteOrder: (id: string) => Promise<boolean>;
   payOrderDebt: (id: string, paymentAmount: number) => Promise<boolean>;
+  updateOrderStatus: (id: string, newStatus: OrderStatus) => Promise<boolean>;
   
   // ===== ACTIONS DE UI =====
   setSearchTerm: (term: string) => void;
@@ -204,6 +205,28 @@ export const useOrderStore = create<OrderStore>()(
           console.error('Erro ao pagar dívida:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Erro ao pagar dívida'
+          });
+          return false;
+        }
+      },
+
+      updateOrderStatus: async (id: string, newStatus: OrderStatus) => {
+        set({ error: '' });
+        try {
+          const updatedOrder = await invoke<Order>('update_order', { 
+            id, 
+            dto: { status: newStatus } 
+          });
+          set(state => ({
+            orders: state.orders.map(order => 
+              order.id === id ? updatedOrder : order
+            )
+          }));
+          return true;
+        } catch (error) {
+          console.error('Erro ao atualizar status da order:', error);
+          set({ 
+            error: error instanceof Error ? error.message : 'Erro ao atualizar status da order'
           });
           return false;
         }
@@ -471,6 +494,8 @@ export const useOrderActions = () => useOrderStore(state => ({
   createOrder: state.createOrder,
   updateOrder: state.updateOrder,
   deleteOrder: state.deleteOrder,
+  payOrderDebt: state.payOrderDebt,
+  updateOrderStatus: state.updateOrderStatus,
   getFilteredOrders: state.getFilteredOrders,
   getOrderById: state.getOrderById,
   

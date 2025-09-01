@@ -34,9 +34,10 @@ import { useOrderStore } from "../stores/orderStore";
 
 interface OrdersProps {
   onNavigate?: (page: string, params?: any) => void;
+  currentUser?: { role: string };
 }
 
-export default function Orders({ onNavigate }: OrdersProps = {}) {
+export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
   console.log("🔵 Orders component renderizado");
   console.log("🔵 Orders component - Stack trace:", new Error().stack?.split('\n').slice(1, 4).join('\n'));
   
@@ -71,6 +72,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
   const updateOrder = useOrderStore(state => state.updateOrder);
   const createOrder = useOrderStore(state => state.createOrder);
   const payOrderDebt = useOrderStore(state => state.payOrderDebt);
+  const updateOrderStatus = useOrderStore(state => state.updateOrderStatus);
   const getFilteredOrders = useOrderStore(state => state.getFilteredOrders);
   const getOrderClothes = useOrderStore(state => state.getOrderClothes);
   const openClothesModal = useOrderStore(state => state.openClothesModal);
@@ -197,6 +199,22 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
     } catch (error) {
       console.error("Erro ao pagar dívida:", error);
       alert("Erro ao processar pagamento: " + error);
+    }
+  };
+
+  const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
+    console.log("🔵 handleUpdateStatus chamado com orderId:", orderId, "newStatus:", newStatus);
+    
+    try {
+      const success = await updateOrderStatus(orderId, newStatus);
+      
+      if (!success) {
+        alert("Erro ao atualizar status do pedido. Verifique o console para mais detalhes.");
+      }
+      
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      alert("Erro ao atualizar status: " + error);
     }
   };
 
@@ -335,6 +353,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
             <OrderCard
               key={order.id}
               order={order}
+              isAdmin={currentUser?.role === "admin"}
               onView={handleViewOrder}
               onEdit={handleOpenPanel}
               onDelete={handleDeleteOrder}
@@ -349,6 +368,7 @@ export default function Orders({ onNavigate }: OrdersProps = {}) {
               }}
               onCopyId={(orderId) => navigator.clipboard.writeText(orderId)}
               onPayDebt={handlePayDebt}
+              onUpdateStatus={handleUpdateStatus}
             />
           ))}
         </div>

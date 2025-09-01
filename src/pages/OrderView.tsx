@@ -53,8 +53,6 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
 
   // Impression store hooks
   const storeImpressions = useImpressions();
-  const impressionsLoading = useImpressionsLoading();
-  const impressionsError = useImpressionsError();
   const isImpressionModalOpen = useIsImpressionModalOpen();
   const selectedOrderForImpression = useSelectedOrderForImpression();
   const impressionStore = useImpressionStore();

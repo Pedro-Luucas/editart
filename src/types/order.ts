@@ -50,7 +50,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   order_received: 'bg-blue-600',
-  in_production: 'bg-orange-600',
-  ready_for_delivery: 'bg-yellow-600',
+  in_production: 'bg-yellow-500',
+  ready_for_delivery: 'bg-orange-600',
   delivered: 'bg-green-600',
 };

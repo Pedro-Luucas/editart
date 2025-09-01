@@ -11,15 +11,17 @@ import {
   CheckCircle,
   XCircle,
   Hash,
-  FileText
+  FileText,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from "../ui/button";
 import { formatDateTime, formatDateOnly } from "../../utils/dateUtils";
-import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "../../types/order";
+import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus } from "../../types/order";
 import ImpressionSummary from "../impressions/ImpressionSummary";
 
 interface OrderCardProps {
   order: Order;
+  isAdmin: boolean;
   onView: (orderId: string) => void;
   onEdit: (order: Order) => void;
   onDelete: (orderId: string) => void;
@@ -27,16 +29,19 @@ interface OrderCardProps {
   onAddImpression: (orderId: string) => void;
   onCopyId: (orderId: string) => void;
   onPayDebt: (orderId: string) => void;
+  onUpdateStatus: (orderId: string, newStatus: OrderStatus) => void;
 }
 
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
+  isAdmin,
   onView,
   onEdit,
   onDelete,
   onAddClothes,
   onAddImpression,
-  onPayDebt
+  onPayDebt,
+  onUpdateStatus
 }) => {
   console.log("🟡 OrderCard renderizado para order:", order.id, "name:", order.name);
   
@@ -47,13 +52,61 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }).format(value);
   };
 
+  const truncateText = (text: string, maxLength: number = 60) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   const getStatusBadge = (status: string) => {
     const colorClass = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS];
     const label = ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS];
     
     return (
-      <div className={`inline-flex items-center gap-1 px-3 py-1 ${colorClass} text-primary-100 rounded-full text-xs font-semibold`}>
+      <div className={`inline-flex items-center gap-1 px-3 py-1 ${colorClass} text-white rounded-full text-xs font-semibold`}>
         {label}
+      </div>
+    );
+  };
+
+  const getStatusDropdown = (status: string) => {
+    const colorClass = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS];
+    const label = ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS];
+    
+    return (
+      <div className="relative group">
+        <select
+          value={status}
+          onChange={(e) => onUpdateStatus(order.id, e.target.value as OrderStatus)}
+          className={`
+            inline-flex items-center gap-2 px-3 py-1 
+            ${colorClass} text-white rounded-full text-xs font-semibold 
+            cursor-pointer border-none outline-none appearance-none 
+            transition-all duration-200 ease-in-out
+            hover:shadow-lg hover:scale-105 focus:ring-2 focus:ring-white/20
+            min-w-[160px] text-center pr-8
+            group-hover:shadow-xl group-hover:scale-110
+          `}
+          title="Clique para alterar o status do pedido"
+        >
+          <option value="order_received" className="bg-gray-800 text-white">Pedido Recebido</option>
+          <option value="in_production" className="bg-gray-800 text-white">Pedido na Produção</option>
+          <option value="ready_for_delivery" className="bg-gray-800 text-white">Pedido Pronto pra Entrega</option>
+          <option value="delivered" className="bg-gray-800 text-white">Pedido Entregue</option>
+        </select>
+        
+        {/* Custom dropdown arrow */}
+        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+          <ChevronDown className="w-3 h-3 text-white opacity-70 group-hover:opacity-100 transition-opacity" />
+        </div>
+        
+        {/* Enhanced glow effect */}
+        <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none"
+             style={{
+               background: `radial-gradient(circle at center, rgba(255,255,255,0.15) 0%, transparent 60%)`,
+               filter: 'blur(2px)',
+               transform: 'scale(1.05)'
+             }}
+        />
       </div>
     );
   };
@@ -101,14 +154,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <div className="flex-1">
             <h3 className="text-lg font-bold text-primary-100 mb-1 flex items-center gap-2">
               <User className="w-4 h-4" />
-              {order.client_name}
+              {truncateText(order.client_name)}
             </h3>
             <p className="text-primary-400 text-sm flex items-center gap-1">
-              {order.name} 
+              {truncateText(order.name)} 
             </p>
           </div>
           <div className="flex flex-col gap-2 items-end">
-            {getStatusBadge(order.status)}
+            {isAdmin ? getStatusDropdown(order.status) : getStatusBadge(order.status)}
             {getDebtBadge(order.debt)}
 
           </div>
