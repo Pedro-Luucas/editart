@@ -1,10 +1,11 @@
 use crate::dto::{ClothesDto, CreateClothesDto, UpdateClothesDto, CreateClothingServiceDto, UpdateClothingServiceDto, ClothingServiceDto};
-use crate::repositories::{ClothesRepository, ClothingServiceRepository, OrderRepository};
+use crate::repositories::{ClothesRepository, ClothingServiceRepository};
+use crate::services::OrderService;
 
 pub struct ClothesService {
     clothes_repository: ClothesRepository,
     clothing_service_repository: ClothingServiceRepository,
-    order_repository: OrderRepository,
+    order_service: OrderService,
 }
 
 impl ClothesService {
@@ -12,23 +13,8 @@ impl ClothesService {
         Self {
             clothes_repository: ClothesRepository,
             clothing_service_repository: ClothingServiceRepository,
-            order_repository: OrderRepository,
+            order_service: OrderService::new(),
         }
-    }
-
-    pub async fn update_order_totals(&self, order_id: &str) -> Result<(), String> {
-        let clothes_list = self.get_clothes_by_order_id(order_id).await?;
-        let subtotal: f64 = clothes_list.iter().map(|c| c.calculate_total_price()).sum();
-        
-        // Calculate total with IVA and discount
-        let order = self.order_repository.get_by_id(order_id).await?
-            .ok_or("Order not found")?;
-        
-        let iva_amount = subtotal * order.iva / 100.0;
-        let total = subtotal + iva_amount - order.discount;
-        
-        self.order_repository.update_financial_values(order_id, subtotal, total).await?;
-        Ok(())
     }
 
     pub async fn create_clothes(&self, dto: CreateClothesDto) -> Result<ClothesDto, String> {
@@ -60,8 +46,8 @@ impl ClothesService {
             services.push(service);
         }
 
-        // Update order totals
-        self.update_order_totals(&dto.order_id).await?;
+        // Recalculate order totals using the unified method
+        self.order_service.recalculate_order_totals(&dto.order_id).await?;
 
         ClothesDto::from_model(clothes, services)
     }
@@ -114,8 +100,8 @@ impl ClothesService {
             Some(clothes) => {
                 let services = self.clothing_service_repository.get_by_clothes_id(id).await?;
                 
-                // Update order totals
-                self.update_order_totals(&order_id).await?;
+                // Recalculate order totals using the unified method
+                self.order_service.recalculate_order_totals(&order_id).await?;
                 
                 let dto = ClothesDto::from_model(clothes, services)?;
                 Ok(Some(dto))
@@ -136,9 +122,9 @@ impl ClothesService {
         // Then delete the clothes item
         let result = self.clothes_repository.delete(id).await?;
         
-        // Update order totals
+        // Recalculate order totals using the unified method
         if result {
-            self.update_order_totals(&order_id).await?;
+            self.order_service.recalculate_order_totals(&order_id).await?;
         }
         
         Ok(result)
@@ -158,8 +144,8 @@ impl ClothesService {
             dto.unit_price,
         ).await?;
 
-        // Update order totals
-        self.update_order_totals(&order_id).await?;
+        // Recalculate order totals using the unified method
+        self.order_service.recalculate_order_totals(&order_id).await?;
 
         ClothingServiceDto::from_model(service)
     }
@@ -182,8 +168,8 @@ impl ClothesService {
 
         match updated_service {
             Some(service) => {
-                // Update order totals
-                self.update_order_totals(&order_id).await?;
+                // Recalculate order totals using the unified method
+                self.order_service.recalculate_order_totals(&order_id).await?;
                 Ok(Some(ClothingServiceDto::from_model(service)?))
             }
             None => Ok(None),
@@ -200,9 +186,9 @@ impl ClothesService {
 
         let result = self.clothing_service_repository.delete(service_id).await?;
         
-        // Update order totals
+        // Recalculate order totals using the unified method
         if result {
-            self.update_order_totals(&order_id).await?;
+            self.order_service.recalculate_order_totals(&order_id).await?;
         }
         
         Ok(result)

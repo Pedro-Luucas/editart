@@ -1,31 +1,18 @@
 use crate::dto::{ImpressionDto, CreateImpressionDto, UpdateImpressionDto};
-use crate::repositories::{ImpressionRepository, OrderRepository};
+use crate::repositories::{ImpressionRepository};
+use crate::services::OrderService;
 
 pub struct ImpressionService {
     impression_repository: ImpressionRepository,
-    order_repository: OrderRepository,
+    order_service: OrderService,
 }
 
 impl ImpressionService {
     pub fn new() -> Self {
         Self {
             impression_repository: ImpressionRepository,
-            order_repository: OrderRepository,
+            order_service: OrderService::new(),
         }
-    }
-
-    async fn update_order_totals(&self, order_id: &str) -> Result<(), String> {
-        let impressions = self.get_impressions_by_order_id(order_id).await?;
-        let impression_total: f64 = impressions.iter().map(|i| i.price).sum();
-        
-        let order = self.order_repository.get_by_id(order_id).await?
-            .ok_or("Order not found")?;
-        
-        let iva_amount = impression_total * order.iva / 100.0;
-        let total = impression_total + iva_amount - order.discount;
-        
-        self.order_repository.update_financial_values(order_id, impression_total, total).await?;
-        Ok(())
     }
 
     pub async fn create_impression(&self, dto: CreateImpressionDto) -> Result<ImpressionDto, String> {
@@ -38,7 +25,8 @@ impl ImpressionService {
             dto.price,
         ).await?;
 
-        self.update_order_totals(&dto.order_id).await?;
+        // Recalculate order totals using the unified method
+        self.order_service.recalculate_order_totals(&dto.order_id).await?;
 
         ImpressionDto::from_model(impression)
     }
@@ -79,7 +67,8 @@ impl ImpressionService {
         ).await?;
 
         if let Some(impression) = updated_impression {
-            self.update_order_totals(&current_impression.order_id).await?;
+            // Recalculate order totals using the unified method
+            self.order_service.recalculate_order_totals(&current_impression.order_id).await?;
             let dto = ImpressionDto::from_model(impression)?;
             Ok(Some(dto))
         } else {
@@ -94,8 +83,9 @@ impl ImpressionService {
 
         let result = self.impression_repository.delete(id).await?;
         
+        // Recalculate order totals using the unified method
         if result {
-            self.update_order_totals(&order_id).await?;
+            self.order_service.recalculate_order_totals(&order_id).await?;
         }
         
         Ok(result)

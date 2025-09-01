@@ -16,13 +16,25 @@ import {
   AlertCircle,
   XCircle,
   Hash,
-  Trash2
+  Trash2,
+  Wallet,
+  Plus
 } from 'lucide-react';
 import { Button } from "../components/ui/button";
 import { formatDateTime, formatDateOnly } from "../utils/dateUtils";
 import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "../types/order";
 import { Clothes, CLOTHING_TYPE_LABELS, SERVICE_TYPE_LABELS, SERVICE_LOCATION_LABELS } from "../types/clothes";
 import { Client } from "../types/client";
+import { ImpressionCard } from "../components/impressions";
+import ImpressionModal from "../components/ui/ImpressionModal";
+import { 
+  useImpressions, 
+  useImpressionsLoading, 
+  useImpressionsError,
+  useIsImpressionModalOpen,
+  useSelectedOrderForImpression,
+  useImpressionStore
+} from "../stores/impressionStore";
 
 interface OrderViewProps {
   orderId?: string;
@@ -37,6 +49,15 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [deletingClothes, setDeletingClothes] = useState<string | null>(null);
+  const [deletingImpression, setDeletingImpression] = useState<string | null>(null);
+
+  // Impression store hooks
+  const storeImpressions = useImpressions();
+  const impressionsLoading = useImpressionsLoading();
+  const impressionsError = useImpressionsError();
+  const isImpressionModalOpen = useIsImpressionModalOpen();
+  const selectedOrderForImpression = useSelectedOrderForImpression();
+  const impressionStore = useImpressionStore();
 
   useEffect(() => {
     console.log("🔵 OrderView useEffect - orderId prop:", orderId);
@@ -87,6 +108,9 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
       const orderClothes = await invoke<Clothes[]>("get_clothes_by_order_id", { orderId: id });
       setClothes(orderClothes);
 
+      // Load impressions for this order using the store
+      await impressionStore.loadImpressions(id);
+
     } catch (err) {
       console.error("Erro ao carregar dados do pedido:", err);
       setError(err as string);
@@ -120,6 +144,37 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
       alert("Erro ao excluir produto: " + err);
     } finally {
       setDeletingClothes(null);
+    }
+  };
+
+  const handleDeleteImpression = async (impressionId: string) => {
+    if (!order || !confirm("Tem certeza que deseja excluir esta impressão?")) {
+      return;
+    }
+
+    try {
+      setDeletingImpression(impressionId);
+      
+      const success = await impressionStore.deleteImpression(impressionId);
+      
+      if (success) {
+        // Recarregar os dados do pedido para atualizar os cálculos
+        await loadOrderData(order.id);
+      } else {
+        alert("Erro ao excluir impressão");
+      }
+    } catch (err) {
+      console.error("Erro ao excluir impressão:", err);
+      alert("Erro ao excluir impressão: " + err);
+    } finally {
+      setDeletingImpression(null);
+    }
+  };
+
+  const handleImpressionAdded = async () => {
+    if (order) {
+      // Recarregar os dados do pedido para atualizar os cálculos
+      await loadOrderData(order.id);
     }
   };
 
@@ -446,10 +501,48 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
                 ))}
               </div>
             )}
-          </div>
-        </div>
+                     </div>
 
-        {/* Sidebar - Summary */}
+           {/* Impressions List */}
+           <div className="glass-effect p-6 rounded-xl">
+             <div className="flex items-center justify-between mb-4">
+               <h2 className="text-xl font-bold text-primary-100 flex items-center gap-2">
+                 <Wallet className="w-5 h-5" />
+                 Impressões ({storeImpressions.filter(imp => imp.order_id === order.id).length} {storeImpressions.filter(imp => imp.order_id === order.id).length === 1 ? 'item' : 'itens'})
+               </h2>
+               <Button
+                 onClick={() => impressionStore.openModal(order.id)}
+                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover-lift"
+               >
+                 <Plus className="w-4 h-4" />
+                 Adicionar Impressão
+               </Button>
+             </div>
+             
+             {storeImpressions.filter(imp => imp.order_id === order.id).length === 0 ? (
+               <div className="text-center py-8 text-primary-400">
+                 <Wallet className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                 <p>Nenhuma impressão adicionada a este pedido.</p>
+               </div>
+             ) : (
+               <div className="space-y-4">
+                 {storeImpressions
+                   .filter(imp => imp.order_id === order.id)
+                   .map((impression, index) => (
+                     <ImpressionCard
+                       key={impression.id}
+                       impression={impression}
+                       index={index}
+                       onDelete={handleDeleteImpression}
+                       deletingImpression={deletingImpression}
+                     />
+                   ))}
+               </div>
+             )}
+           </div>
+         </div>
+
+         {/* Sidebar - Summary */}
         <div className="space-y-6">
           {/* Financial Summary */}
           <div className="glass-effect p-6 rounded-xl">
@@ -489,26 +582,33 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
           <div className="glass-effect p-6 rounded-xl">
             <h3 className="text-lg font-bold text-primary-100 mb-4">Resumo do Pedido</h3>
             
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-primary-400">Total de itens:</span>
-                <span className="font-medium text-primary-200">{clothes.length}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-primary-400">Total de peças:</span>
-                <span className="font-medium text-primary-200">
-                  {clothes.reduce((sum, item) => sum + item.total_quantity, 0)}
-                </span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-primary-400">Serviços aplicados:</span>
-                <span className="font-medium text-primary-200">
-                  {clothes.reduce((sum, item) => sum + item.services.length, 0)}
-                </span>
-              </div>
-            </div>
+                         <div className="space-y-3">
+               <div className="flex justify-between items-center">
+                 <span className="text-primary-400">Total de itens:</span>
+                 <span className="font-medium text-primary-200">{clothes.length}</span>
+               </div>
+               
+               <div className="flex justify-between items-center">
+                 <span className="text-primary-400">Total de peças:</span>
+                 <span className="font-medium text-primary-200">
+                   {clothes.reduce((sum, item) => sum + item.total_quantity, 0)}
+                 </span>
+               </div>
+               
+               <div className="flex justify-between items-center">
+                 <span className="text-primary-400">Serviços aplicados:</span>
+                 <span className="font-medium text-primary-200">
+                   {clothes.reduce((sum, item) => sum + item.services.length, 0)}
+                 </span>
+               </div>
+               
+               <div className="flex justify-between items-center">
+                 <span className="text-primary-400">Impressões:</span>
+                 <span className="font-medium text-primary-200">
+                   {storeImpressions.filter(imp => imp.order_id === order.id).length}
+                 </span>
+               </div>
+             </div>
           </div>
 
           {/* Timeline */}
@@ -544,8 +644,16 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                 </div>
+       </div>
+
+       {/* Impression Modal */}
+       <ImpressionModal
+         isOpen={isImpressionModalOpen}
+         onClose={() => impressionStore.closeModal()}
+         orderId={selectedOrderForImpression || ""}
+         onImpressionAdded={handleImpressionAdded}
+       />
+     </div>
+   );
+ }

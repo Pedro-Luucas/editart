@@ -119,4 +119,33 @@ impl OrderService {
         
         self.repository.pay_debt(id, payment_amount).await
     }
+
+    /// Recalcula os totais da order considerando clothes e impressions
+    pub async fn recalculate_order_totals(&self, order_id: &str) -> Result<(), String> {
+        // Get the order to access IVA and discount
+        let order = self.repository.get_by_id(order_id).await?
+            .ok_or("Order not found")?;
+        
+        // Calculate clothes total using the service to get DTOs with calculated totals
+        let clothes_service = crate::services::ClothesService::new();
+        let clothes_list = clothes_service.get_clothes_by_order_id(order_id).await?;
+        let clothes_total: f64 = clothes_list.iter().map(|clothes| clothes.calculate_total_price()).sum();
+        
+        // Calculate impressions total
+        let impression_repo = crate::repositories::ImpressionRepository;
+        let impressions = impression_repo.get_by_order_id(order_id).await?;
+        let impressions_total: f64 = impressions.iter().map(|impression| impression.price).sum();
+        
+        // Calculate combined subtotal
+        let subtotal = clothes_total + impressions_total;
+        
+        // Calculate total with IVA and discount
+        let iva_amount = subtotal * order.iva / 100.0;
+        let total = subtotal + iva_amount - order.discount;
+        
+        // Update the order with new totals
+        self.repository.update_financial_values(order_id, subtotal, total).await?;
+        
+        Ok(())
+    }
 }
