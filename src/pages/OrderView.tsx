@@ -27,14 +27,18 @@ import { Clothes, CLOTHING_TYPE_LABELS, SERVICE_TYPE_LABELS, SERVICE_LOCATION_LA
 import { Client } from "../types/client";
 import { ImpressionCard } from "../components/impressions";
 import ImpressionModal from "../components/ui/ImpressionModal";
+import ClothesModal from "../components/ui/ClothesModal";
 import { 
   useImpressions, 
-  useImpressionsLoading, 
-  useImpressionsError,
   useIsImpressionModalOpen,
   useSelectedOrderForImpression,
   useImpressionStore
 } from "../stores/impressionStore";
+import {
+  useIsClothesModalOpen,
+  useSelectedOrderForClothes,
+  useOrderStore
+} from "../stores/orderStore";
 
 interface OrderViewProps {
   orderId?: string;
@@ -56,6 +60,11 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
   const isImpressionModalOpen = useIsImpressionModalOpen();
   const selectedOrderForImpression = useSelectedOrderForImpression();
   const impressionStore = useImpressionStore();
+
+  // Clothes store hooks
+  const isClothesModalOpen = useIsClothesModalOpen();
+  const selectedOrderForClothes = useSelectedOrderForClothes();
+  const orderStore = useOrderStore();
 
   useEffect(() => {
     console.log("🔵 OrderView useEffect - orderId prop:", orderId);
@@ -170,6 +179,13 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
   };
 
   const handleImpressionAdded = async () => {
+    if (order) {
+      // Recarregar os dados do pedido para atualizar os cálculos
+      await loadOrderData(order.id);
+    }
+  };
+
+  const handleClothesAdded = async () => {
     if (order) {
       // Recarregar os dados do pedido para atualizar os cálculos
       await loadOrderData(order.id);
@@ -376,10 +392,19 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
 
           {/* Clothes List */}
           <div className="glass-effect p-6 rounded-xl">
-            <h2 className="text-xl font-bold text-primary-100 mb-4 flex items-center gap-2">
-              <Shirt className="w-5 h-5" />
-              Produtos do Pedido ({clothes.length} {clothes.length === 1 ? 'item' : 'itens'})
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-primary-100 flex items-center gap-2">
+                <Shirt className="w-5 h-5" />
+                Produtos do Pedido ({clothes.length} {clothes.length === 1 ? 'item' : 'itens'})
+              </h2>
+              <Button
+                onClick={() => orderStore.openClothesModal(order.id)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover-lift"
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar Produtos
+              </Button>
+            </div>
             
             {clothes.length === 0 ? (
               <div className="text-center py-8 text-primary-400">
@@ -651,6 +676,14 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
          onClose={() => impressionStore.closeModal()}
          orderId={selectedOrderForImpression || ""}
          onImpressionAdded={handleImpressionAdded}
+       />
+
+       {/* Clothes Modal */}
+       <ClothesModal
+         isOpen={isClothesModalOpen}
+         onClose={() => orderStore.closeClothesModal()}
+         orderId={selectedOrderForClothes || ""}
+         onClothesAdded={handleClothesAdded}
        />
      </div>
    );

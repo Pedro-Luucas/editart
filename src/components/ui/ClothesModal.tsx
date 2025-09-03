@@ -307,8 +307,12 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                 type="number"
                 min="0"
                 step="0.01"
-                value={unitPrice}
-                onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
+                value={unitPrice || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setUnitPrice(value === '' ? 0 : parseFloat(value) || 0);
+                }}
+                placeholder="0.00"
                 className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100 placeholder-primary-400"
               />
             </div>
@@ -319,7 +323,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
             <label className="block text-sm font-medium text-primary-200 mb-3">
               Tamanhos e Quantidades
             </label>
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-6 gap-2">
               {CLOTHING_SIZES.map(size => (
                 <div key={size} className="text-center">
                   <label className="block text-sm font-medium text-primary-300 mb-2">
@@ -336,8 +340,12 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                     <input
                       type="number"
                       min="0"
-                      value={sizes[size]}
-                      onChange={(e) => handleSizeChange(size, parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      value={sizes[size] || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleSizeChange(size, value === '' ? 0 : parseInt(value) || 0);
+                      }}
                       className="w-16 h-8 text-center bg-primary-700 border-t border-b border-primary-600 focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100"
                     />
                     <button
@@ -406,7 +414,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
             {/* Add Service Form */}
             {showServiceForm && (
               <div className="bg-primary-700/50 p-4 rounded-md space-y-3 border border-primary-600">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-primary-200 mb-1">
                       Tipo de Serviço
@@ -439,30 +447,34 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
 
                   <div>
                     <label className="block text-sm font-medium text-primary-200 mb-1">
-                      Descrição (Opcional)
-                    </label>
-                    <input
-                      type="text"
-                      value={newService.description || ''}
-                      onChange={(e) => setNewService(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Ex: Logo da empresa, Nome personalizado"
-                      className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100 placeholder-primary-400"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-primary-200 mb-1">
                       Preço Unitário (MT)
                     </label>
                     <input
                       type="number"
                       min="0"
                       step="0.01"
-                      value={newService.unit_price}
-                      onChange={(e) => setNewService(prev => ({ ...prev, unit_price: parseFloat(e.target.value) || 0 }))}
+                      value={newService.unit_price || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setNewService(prev => ({ ...prev, unit_price: value === '' ? 0 : parseFloat(value) || 0 }));
+                      }}
+                      placeholder="0.00"
                       className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100 placeholder-primary-400"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary-200 mb-1">
+                    Descrição (Opcional)
+                  </label>
+                  <textarea
+                    value={newService.description || ''}
+                    onChange={(e) => setNewService(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Ex: Logo da empresa, Nome personalizado"
+                    rows={3}
+                    className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100 placeholder-primary-400 resize-none"
+                  />
                 </div>
 
                 <div className="flex gap-2">
@@ -479,7 +491,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                     onClick={() => setShowServiceForm(false)}
                     variant="outline"
                     size="sm"
-                    className="border-primary-500 text-primary-300 hover:bg-primary-600 hover:text-primary-100"
+                    className="bg-primary-500 border-primary-500 text-primary-300 hover:bg-primary-600 hover:text-primary-100"
                   >
                     Cancelar
                   </Button>
@@ -525,7 +537,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
             onClick={onClose}
             variant="outline"
             disabled={loading}
-            className="bg-primary-500 text-black hover:bg-primary-600 hover:text-primary-100"
+            className="bg-primary-500 border-primary-500 text-primary-300 hover:bg-primary-600 hover:text-primary-100"
           >
             Cancelar
           </Button>
