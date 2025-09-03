@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   Edit, 
-  Copy, 
   Trash2, 
   Calendar,
   User,
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from "../ui/button";
 import { formatDateTime, formatDateOnly } from "../../utils/dateUtils";
+import { truncateText } from "../../lib/utils";
 import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus } from "../../types/order";
 import ImpressionSummary from "../impressions/ImpressionSummary";
 
@@ -52,11 +52,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }).format(value);
   };
 
-  const truncateText = (text: string, maxLength: number = 60) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  };
-
   const getStatusBadge = (status: string) => {
     const colorClass = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS];
     const label = ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS];
@@ -70,7 +65,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const getStatusDropdown = (status: string) => {
     const colorClass = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS];
-    const label = ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS];
     
     return (
       <div className="relative group">
@@ -147,16 +141,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
   console.log("🟡 OrderCard finalizando renderização para order:", order.id);
 
   return (
-    <div className="glass-effect p-5 rounded-xl hover-lift">
-      <div className="space-y-4">
+    <div className="glass-effect p-5 rounded-xl hover-lift h-full flex flex-col">
+      <div className="flex-1 space-y-4">
         {/* Header com status */}
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-primary-100 mb-1 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-primary-100 mb-1 flex items-center gap-2" title={order.client_name}>
               <User className="w-4 h-4" />
               {truncateText(order.client_name)}
             </h3>
-            <p className="text-primary-400 text-sm flex items-center gap-1">
+            <p className="text-primary-400 text-sm flex items-center gap-1" title={order.name}>
               {truncateText(order.name)} 
             </p>
           </div>
@@ -244,21 +238,20 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <span className="text-primary-400">Vencimento:</span>
           <span className="text-primary-200">{formatDateOnly(order.due_date)}</span>
         </div>
+      </div>
 
+      {/* Timestamps e Actions - sempre no final do card */}
+      <div className="border-t border-primary-600 pt-3 mt-4 space-y-3">
         {/* Timestamps */}
-        <div className="border-t border-primary-600 pt-3 space-y-1 text-xs text-primary-400">
+        <div className="space-y-1 text-xs text-primary-400">
           <div>
             <span className="text-primary-500 font-medium">Criado:</span>{" "}
             <span className="text-primary-300">{formatDateTime(order.created_at)}</span>
           </div>
-          <div>
-            <span className="text-primary-500 font-medium">ID:</span>{" "}
-            <span className="text-primary-300 font-mono">{order.id.slice(0, 8)}...</span>
-          </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2">
           <Button
             onClick={() => onView(order.id)}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium hover-lift transition-all text-sm bg-blue-600 hover:bg-blue-700"

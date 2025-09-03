@@ -12,6 +12,7 @@ import ClothesModal from "../components/ui/ClothesModal";
 import ImpressionModal from "../components/ui/ImpressionModal";
 
 import { Order, OrderStatus } from "../types/order";
+import { Impression } from "../types/impression";
 
 // Import orderStore hooks
 import {
@@ -28,7 +29,9 @@ import {
 import {
   useSelectedOrderForImpression,
   useIsImpressionModalOpen,
-  useImpressionStore
+  useImpressionStore,
+  useLoadImpressions,
+  useImpressions
 } from "../stores/impressionStore";
 import { useOrderStore } from "../stores/orderStore";
 
@@ -60,6 +63,9 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
   const selectedOrderForImpression = useSelectedOrderForImpression();
   const isImpressionModalOpen = useIsImpressionModalOpen();
   
+  // Impressions state for OrderSidePanel
+  const [orderImpressions, setOrderImpressions] = useState<Impression[]>([]);
+  
   console.log("🔵 Orders - Estado atual:", {
     ordersCount: orders.length,
     isPanelOpen,
@@ -74,13 +80,26 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
   const payOrderDebt = useOrderStore(state => state.payOrderDebt);
   const updateOrderStatus = useOrderStore(state => state.updateOrderStatus);
   const getFilteredOrders = useOrderStore(state => state.getFilteredOrders);
-  const getOrderClothes = useOrderStore(state => state.getOrderClothes);
   const openClothesModal = useOrderStore(state => state.openClothesModal);
   const closeClothesModal = useOrderStore(state => state.closeClothesModal);
   
   // Impression actions
   const openImpressionModal = useImpressionStore(state => state.openModal);
   const closeImpressionModal = useImpressionStore(state => state.closeModal);
+  const loadImpressions = useLoadImpressions();
+  const storeImpressions = useImpressions();
+
+  // Função para carregar impressões de uma ordem específica usando o store
+  const loadOrderImpressions = async (orderId: string) => {
+    try {
+      console.log("IMPRESSION: loadOrderImpressions called for orderId:", orderId);
+      await loadImpressions(orderId);
+      console.log("IMPRESSION: Impressions loaded via store");
+    } catch (error) {
+      console.error("IMPRESSION: Error loading impressions:", error);
+    }
+  };
+  
   
   // UI actions
   const setSearchTerm = useOrderStore(state => state.setSearchTerm);
@@ -94,6 +113,29 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
     console.log("🔵 Orders useEffect - loadOrders chamado");
     loadOrders();
   }, []); // Remove actions dependency to prevent loop
+
+  // Load impressions when editing order changes
+  useEffect(() => {
+    console.log("IMPRESSION: useEffect - editingOrder changed:", editingOrder?.id);
+    if (editingOrder) {
+      console.log("IMPRESSION: Loading impressions for order:", editingOrder.id);
+      loadImpressions(editingOrder.id);
+    } else {
+      console.log("IMPRESSION: No editing order, clearing impressions");
+      setOrderImpressions([]);
+    }
+  }, [editingOrder, loadImpressions]);
+
+  // Sincronizar impressões do store com o estado local
+  useEffect(() => {
+    console.log("IMPRESSION: Store impressions changed:", storeImpressions);
+    if (editingOrder) {
+      // Filtrar impressões apenas da ordem sendo editada
+      const orderImpressions = storeImpressions.filter(imp => imp.order_id === editingOrder.id);
+      console.log("IMPRESSION: Filtered impressions for current order:", orderImpressions);
+      setOrderImpressions(orderImpressions);
+    }
+  }, [storeImpressions, editingOrder]);
 
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm("Tem certeza que deseja excluir este pedido?")) {
@@ -221,6 +263,8 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
   console.log("🔵 Orders - Antes do return, estado final:", {
     filteredOrdersCount: filteredOrders.length
   });
+
+  console.log("IMPRESSION: Orders component render - orderImpressions:", orderImpressions);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -380,6 +424,8 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
         editingOrder={editingOrder || undefined}
         onClose={handleClosePanel}
         onSave={handleSaveOrder}
+        impressions={orderImpressions}
+        onLoadImpressions={loadOrderImpressions}
       />
 
       {/* ClothesModal para adicionar/editar produtos */}
@@ -403,8 +449,17 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
           onClose={closeImpressionModal}
           orderId={selectedOrderForImpression}
           onImpressionAdded={() => {
-            console.log("🔵 Impressão adicionada, recarregando pedidos");
+            console.log("IMPRESSION: Impression added, reloading orders and impressions");
+            console.log("IMPRESSION: editingOrder.id:", editingOrder?.id);
+            console.log("IMPRESSION: selectedOrderForImpression:", selectedOrderForImpression);
             loadOrders();
+            // Recarregar impressões se estivermos editando a mesma ordem
+            if (editingOrder && editingOrder.id === selectedOrderForImpression) {
+              console.log("IMPRESSION: Reloading impressions for current editing order");
+              loadImpressions(editingOrder.id);
+            } else {
+              console.log("IMPRESSION: Not reloading impressions - different order or no editing order");
+            }
             closeImpressionModal();
           }}
         />

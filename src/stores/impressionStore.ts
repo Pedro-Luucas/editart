@@ -156,3 +156,4 @@ export const useImpressionsLoading = () => useImpressionStore(state => state.loa
 export const useImpressionsError = () => useImpressionStore(state => state.error);
 export const useIsImpressionModalOpen = () => useImpressionStore(state => state.isModalOpen);
 export const useSelectedOrderForImpression = () => useImpressionStore(state => state.selectedOrderId);
+export const useLoadImpressions = () => useImpressionStore(state => state.loadImpressions);

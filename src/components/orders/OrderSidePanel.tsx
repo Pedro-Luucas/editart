@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Plus, Trash2, User, Shirt } from 'lucide-react';
+import { Plus, Trash2, User, Shirt, Printer } from 'lucide-react';
 import { Button } from "../ui/button";
 import SidePanel from "../ui/SidePanel";
 import ClientSelectModal from "../ui/ClientSelectModal";
@@ -9,22 +9,29 @@ import ClothesModal from "../ui/ClothesModal";
 import { Order, OrderStatus } from "../../types/order";
 import { Client } from "../../types/client";
 import { Clothes, CLOTHING_TYPE_LABELS, SERVICE_TYPE_LABELS, SERVICE_LOCATION_LABELS } from "../../types/clothes";
+import { Impression, IMPRESSION_MATERIAL_LABELS } from "../../types/impression";
 
 interface OrderSidePanelProps {
   isOpen: boolean;
   editingOrder?: Order;
   onClose: () => void;
   onSave: (orderData: any) => void;
+  impressions?: Impression[];
+  onLoadImpressions?: (orderId: string) => void;
 }
 
 export default function OrderSidePanel({ 
   isOpen, 
   editingOrder, 
   onClose, 
-  onSave 
+  onSave,
+  impressions = [],
+  onLoadImpressions
 }: OrderSidePanelProps) {
+  console.log("IMPRESSION: OrderSidePanel rendered with impressions:", impressions);
+  console.log("IMPRESSION: Number of impressions received:", impressions.length);
   // Estado interno do componente
-  const [activeTab, setActiveTab] = useState<'details' | 'clothes'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'clothes' | 'impressions'>('details');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -179,9 +186,21 @@ export default function OrderSidePanel({
     }
   };
 
-  const handleTabChange = (tab: 'details' | 'clothes') => {
+  const handleTabChange = (tab: 'details' | 'clothes' | 'impressions') => {
     setActiveTab(tab);
     console.log("Mudando para aba:", tab, "editingOrder:", editingOrder?.id, "orderClothes.length:", orderClothes.length);
+    console.log("IMPRESSION: Tab changed to:", tab);
+    if (tab === 'impressions') {
+      console.log("IMPRESSION: Switching to impressions tab");
+      console.log("IMPRESSION: Current impressions count:", impressions.length);
+      console.log("IMPRESSION: Current impressions data:", impressions);
+      
+      // Carregar impressões quando mudar para a tab de impressões
+      if (editingOrder && onLoadImpressions) {
+        console.log("IMPRESSION: Loading impressions for order:", editingOrder.id);
+        onLoadImpressions(editingOrder.id);
+      }
+    }
     // Se mudar para a aba de produtos e temos uma ordem sendo editada, recarregar as roupas
     if (tab === 'clothes' && editingOrder && orderClothes.length === 0) {
       console.log("Recarregando roupas para a aba de produtos");
@@ -236,7 +255,17 @@ export default function OrderSidePanel({
             }`}
           >
             Produtos
-        </button>
+          </button>
+          <button
+            onClick={() => handleTabChange('impressions')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'impressions'
+                ? 'bg-primary-600 text-white'
+                : 'text-primary-300 hover:text-white hover:bg-primary-700'
+            }`}
+          >
+            Impressões
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -360,7 +389,7 @@ export default function OrderSidePanel({
               </p>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'clothes' ? (
           /* Clothes Tab */
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -467,6 +496,98 @@ export default function OrderSidePanel({
               </div>
             )}
           </div>
+        ) : (
+          /* Impressions Tab */
+          (() => {
+            console.log("IMPRESSION: Rendering impressions tab content");
+            console.log("IMPRESSION: impressions.length:", impressions.length);
+            console.log("IMPRESSION: impressions data:", impressions);
+            
+            return (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-primary-200">Impressões do Pedido</h3>
+                </div>
+
+                {/* Lista de impressões */}
+                {impressions.length === 0 ? (
+                  <div className="text-center py-8 text-primary-400">
+                    {(() => {
+                      console.log("IMPRESSION: Rendering empty state");
+                      return null;
+                    })()}
+                    <Printer className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma impressão adicionada ainda.</p>
+                    <p className="text-sm">As impressões serão exibidas aqui quando adicionadas ao pedido.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {(() => {
+                      console.log("IMPRESSION: Rendering impressions list");
+                      return null;
+                    })()}
+                    {impressions.map((impression) => {
+                      console.log("IMPRESSION: Rendering impression card:", impression);
+                      return (
+                  <div key={impression.id} className="bg-primary-800 p-4 rounded-lg border border-primary-600">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-medium text-primary-100">{impression.name}</h4>
+                        <p className="text-sm text-primary-300">Tamanho: {impression.size}</p>
+                      </div>
+                    </div>
+
+                    {/* Material */}
+                    <div className="mb-3">
+                      <p className="text-sm text-primary-400 mb-1">Material:</p>
+                      <div className="text-sm text-primary-300 bg-primary-700 px-2 py-1 rounded">
+                        {impression.material === 'other' 
+                          ? impression.custom_material || 'Outros'
+                          : IMPRESSION_MATERIAL_LABELS[impression.material]
+                        }
+                      </div>
+                    </div>
+
+                    {/* Descrição */}
+                    {impression.description && (
+                      <div className="mb-3">
+                        <p className="text-sm text-primary-400 mb-1">Descrição:</p>
+                        <p className="text-sm text-primary-300 bg-primary-700 px-2 py-1 rounded">
+                          {impression.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Preço */}
+                    <div className="text-sm">
+                      <div className="flex justify-between font-medium text-primary-100 pt-1 border-t border-primary-600">
+                        <span>Preço:</span>
+                        <span>{impression.price.toFixed(2)} MT</span>
+                      </div>
+                    </div>
+                  </div>
+                  );
+                })}
+
+                    {/* Resumo total */}
+                    <div className="bg-blue-900/30 p-4 rounded-lg border border-blue-600">
+                      {(() => {
+                        const total = impressions.reduce((sum, impression) => sum + impression.price, 0);
+                        console.log("IMPRESSION: Calculating total:", total);
+                        return null;
+                      })()}
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-blue-200">Total de Impressões:</span>
+                        <span className="text-xl font-bold text-blue-400">
+                          {impressions.reduce((sum, impression) => sum + impression.price, 0).toFixed(2)} MT
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()
         )}
       </SidePanel>
 
