@@ -28,6 +28,7 @@ import { Client } from "../types/client";
 import { ImpressionCard } from "../components/impressions";
 import ImpressionModal from "../components/ui/ImpressionModal";
 import ClothesModal from "../components/ui/ClothesModal";
+import InvoicePrint from "../components/InvoicePrint";
 import { 
   useImpressions, 
   useIsImpressionModalOpen,
@@ -291,6 +292,12 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
               <Edit className="w-4 h-4" />
               Editar Pedido
             </Button>
+            <InvoicePrint 
+              order={order}
+              client={client}
+              clothes={clothes}
+              impressions={storeImpressions.filter(imp => imp.order_id === order.id)}
+            />
           </div>
         </div>
 

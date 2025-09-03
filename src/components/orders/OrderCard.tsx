@@ -195,21 +195,22 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
         {/* Valores */}
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-primary-400 text-sm">Valor Total:</span>
+          <div className="flex bg-primary-800 justify-between items-center">
+            <span className="text-primary-400 text-sm">Subtotal:</span>
             <span className="text-xl font-bold text-secondary-400">
-              {formatCurrency(order.total)}
+              
+              {formatCurrency(order.subtotal)}
             </span>
           </div>
-          
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-primary-400">Subtotal:</span>
-            <span className="text-primary-200">{formatCurrency(order.subtotal)}</span>
-          </div>
-          
+
           <div className="flex justify-between items-center text-sm">
             <span className="text-primary-400">IVA ({order.iva}%):</span>
             <span className="text-primary-200">{formatCurrency(order.subtotal * order.iva / 100)}</span>
+          </div>
+
+          <div className="flex bg-primary-800 justify-between items-center text-sm">
+            <span className="text-primary-400">Total:</span>
+            <span className="text-primary-200">{formatCurrency(order.total)}</span>
           </div>
           
           {order.discount > 0 && (
@@ -224,7 +225,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <span className="text-primary-200">{formatCurrency(order.total - order.debt)}</span>
           </div>
           
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex bg-primary-800 justify-between items-center text-sm">
             <span className="text-primary-400">Débito Restante:</span>
             <span className={`font-semibold ${order.debt === 0 ? 'text-green-400' : 'text-red-400'}`}>
               {formatCurrency(order.debt)}

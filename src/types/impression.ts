@@ -6,6 +6,9 @@ export type ImpressionMaterial =
   | 'banner_black_white'
   | 'backlite'
   | 'flag_fabric'
+  | 'transfer_light'
+  | 'transfer_dark'
+  | 'dtf'
   | 'other';
 
 export interface Impression {
@@ -49,6 +52,9 @@ export const IMPRESSION_MATERIAL_LABELS: Record<ImpressionMaterial, string> = {
   banner_black_white: 'Banner Preto e Branco',
   backlite: 'Backlite',
   flag_fabric: 'Tecido de Bandeira',
+  transfer_light: 'Transfer Claro',
+  transfer_dark: 'Transfer Escuro',
+  dtf: 'DTF',
   other: 'Outros (especificar)'
 };
 
@@ -60,5 +66,8 @@ export const IMPRESSION_MATERIALS: ImpressionMaterial[] = [
   'banner_black_white',
   'backlite',
   'flag_fabric',
+  'transfer_light',
+  'transfer_dark',
+  'dtf',
   'other'
 ];
