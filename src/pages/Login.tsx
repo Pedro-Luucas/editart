@@ -91,6 +91,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 placeholder="Digite seu login"
                 required
                 disabled={loading}
+                autoComplete="off"
                 className="w-full px-4 py-3 bg-primary-800/50 border border-primary-600 rounded-xl text-primary-100 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all"
               />
             </div>
@@ -108,6 +109,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 placeholder="Digite sua senha"
                 required
                 disabled={loading}
+                autoComplete="off"
                 className="w-full px-4 py-3 bg-primary-800/50 border border-primary-600 rounded-xl text-primary-100 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all"
               />
             </div>

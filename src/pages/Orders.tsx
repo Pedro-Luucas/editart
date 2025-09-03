@@ -3,7 +3,9 @@ import {
   RotateCcw, 
   Plus, 
   FileText, 
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from "../components/ui/button";
 import OrderCard from "../components/orders/OrderCard";
@@ -65,6 +67,10 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
   
   // Impressions state for OrderSidePanel
   const [orderImpressions, setOrderImpressions] = useState<Impression[]>([]);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
   
   console.log("🔵 Orders - Estado atual:", {
     ordersCount: orders.length,
@@ -197,6 +203,17 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
     return getFilteredOrders();
   }, [orders, searchTerm, statusFilter]);
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
 
 
   const handleViewOrder = (orderId: string) => {
@@ -287,6 +304,7 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
               placeholder="Buscar por cliente, ID do pedido ou contato..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              autoComplete="off"
               className="input-dark w-full px-4 py-2 rounded-lg"
             />
           </div>
@@ -335,6 +353,11 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
           {searchTerm && (
             <span className="text-primary-400">
               {" "}de {orders.length} total
+            </span>
+          )}
+          {filteredOrders.length > itemsPerPage && (
+            <span className="text-primary-400">
+              {" "}(página {currentPage} de {totalPages})
             </span>
           )}
         </p>
@@ -393,7 +416,7 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOrders.map((order) => (
+          {paginatedOrders.map((order) => (
             <OrderCard
               key={order.id}
               order={order}
@@ -415,6 +438,51 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
               onUpdateStatus={handleUpdateStatus}
             />
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {filteredOrders.length > itemsPerPage && (
+        <div className="mt-8 flex justify-center">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              variant="secondary"
+              size="sm"
+              className="px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  variant={currentPage === page ? "default" : "secondary"}
+                  size="sm"
+                  className={`px-3 py-2 rounded-lg min-w-[40px] ${
+                    currentPage === page 
+                      ? "bg-secondary-500 text-white" 
+                      : "hover:bg-primary-700"
+                  }`}
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              variant="secondary"
+              size="sm"
+              className="px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
 

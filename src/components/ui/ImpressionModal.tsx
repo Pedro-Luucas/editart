@@ -147,6 +147,7 @@ export default function ImpressionModal({ isOpen, onClose, orderId, onImpression
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-lg text-primary-100 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
                   placeholder="Ex: Logo da empresa, Banner promocional..."
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -162,6 +163,7 @@ export default function ImpressionModal({ isOpen, onClose, orderId, onImpression
                   onChange={(e) => setSize(e.target.value)}
                   className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-lg text-primary-100 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
                   placeholder="Ex: 1m x 2m, A4, 50cm x 30cm..."
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -197,6 +199,7 @@ export default function ImpressionModal({ isOpen, onClose, orderId, onImpression
                     onChange={(e) => setCustomMaterial(e.target.value)}
                     className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-lg text-primary-100 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
                     placeholder="Ex: Tecido de algodão, Papel fotográfico, Lona..."
+                    autoComplete="off"
                     required
                   />
                 </div>
@@ -218,6 +221,7 @@ export default function ImpressionModal({ isOpen, onClose, orderId, onImpression
                   onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
                   className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-lg text-primary-100 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
                   placeholder="0.00"
+                  autoComplete="off"
                   required
                 />
               </div>

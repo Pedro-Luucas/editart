@@ -457,6 +457,7 @@ export const useOrderStore = create<OrderStore>()(
 export const useOrders = () => useOrderStore(state => state.orders);
 export const useOrdersLoading = () => useOrderStore(state => state.loading);
 export const useOrdersError = () => useOrderStore(state => state.error);
+export const useLoadOrders = () => useOrderStore(state => state.loadOrders);
 
 export const useSearchTerm = () => useOrderStore(state => state.searchTerm);
 export const useStatusFilter = () => useOrderStore(state => state.statusFilter);

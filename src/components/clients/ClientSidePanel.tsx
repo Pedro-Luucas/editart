@@ -146,6 +146,7 @@ export default function ClientSidePanel({
             value={formData.name}
             onChange={handleInputChange}
             required
+            autoComplete="off"
             className="input-dark w-full px-4 py-2 rounded-lg"
             placeholder="Nome completo do cliente"
           />
@@ -161,6 +162,7 @@ export default function ClientSidePanel({
             value={formData.nuit}
             onChange={handleInputChange}
             required
+            autoComplete="off"
             className="input-dark w-full px-4 py-2 rounded-lg font-mono"
             placeholder="Número único de identificação tributária"
           />
@@ -178,6 +180,7 @@ export default function ClientSidePanel({
               value={novoContato}
               onChange={(e) => setNovoContato(e.target.value)}
               placeholder="Telefone, email ou outros contatos"
+              autoComplete="off"
               className="input-dark flex-1 px-4 py-2 rounded-lg"
               onKeyPress={(e) => e.key === 'Enter' && handleAddContato()}
             />
@@ -223,6 +226,7 @@ export default function ClientSidePanel({
             value={formData.category}
             onChange={handleInputChange}
             required
+            autoComplete="off"
             className="input-dark w-full px-4 py-2 rounded-lg"
             placeholder="Categoria do cliente"
           />

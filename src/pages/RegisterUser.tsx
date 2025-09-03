@@ -125,6 +125,7 @@ export default function RegisterUser({ currentUser, onBack }: RegisterUserProps)
               placeholder="Digite o login do usuário"
               required
               disabled={loading}
+              autoComplete="off"
               className="w-full px-4 py-3 bg-primary-800/50 border border-primary-600 rounded-xl text-primary-100 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all"
             />
           </div>
@@ -142,6 +143,7 @@ export default function RegisterUser({ currentUser, onBack }: RegisterUserProps)
               placeholder="Digite a senha do usuário"
               required
               disabled={loading}
+              autoComplete="off"
               className="w-full px-4 py-3 bg-primary-800/50 border border-primary-600 rounded-xl text-primary-100 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-all"
             />
           </div>

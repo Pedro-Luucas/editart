@@ -281,6 +281,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                   value={customType}
                   onChange={(e) => setCustomType(e.target.value)}
                   placeholder="Descreva o tipo de produto"
+                  autoComplete="off"
                   className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100 placeholder-primary-400"
                 />
               </div>
@@ -295,6 +296,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 placeholder="Ex: Azul, Vermelho, Branco"
+                autoComplete="off"
                 className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100 placeholder-primary-400"
               />
             </div>
@@ -313,6 +315,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                   setUnitPrice(value === '' ? 0 : parseFloat(value) || 0);
                 }}
                 placeholder="0.00"
+                autoComplete="off"
                 className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100 placeholder-primary-400"
               />
             </div>
@@ -346,6 +349,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                         const value = e.target.value;
                         handleSizeChange(size, value === '' ? 0 : parseInt(value) || 0);
                       }}
+                      autoComplete="off"
                       className="w-16 h-8 text-center bg-primary-700 border-t border-b border-primary-600 focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100"
                     />
                     <button
@@ -459,6 +463,7 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
                         setNewService(prev => ({ ...prev, unit_price: value === '' ? 0 : parseFloat(value) || 0 }));
                       }}
                       placeholder="0.00"
+                      autoComplete="off"
                       className="w-full px-3 py-2 bg-primary-700 border border-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500 text-primary-100 placeholder-primary-400"
                     />
                   </div>

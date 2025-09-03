@@ -71,6 +71,7 @@ export default function ClientForm() {
             onChange={handleInputChange}
             required
             disabled={isLoading}
+            autoComplete="off"
             className="input-dark w-full px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -87,6 +88,7 @@ export default function ClientForm() {
             onChange={handleInputChange}
             required
             disabled={isLoading}
+            autoComplete="off"
             className="input-dark w-full px-4 py-2 rounded-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -103,6 +105,7 @@ export default function ClientForm() {
             onChange={handleInputChange}
             required
             disabled={isLoading}
+            autoComplete="off"
             className="input-dark w-full px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -119,6 +122,7 @@ export default function ClientForm() {
             onChange={handleInputChange}
             required
             disabled={isLoading}
+            autoComplete="off"
             className="input-dark w-full px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>

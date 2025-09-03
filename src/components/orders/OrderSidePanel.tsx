@@ -282,6 +282,7 @@ export default function OrderSidePanel({
                 value={formData.name}
                 onChange={handleInputChange}
                 required
+                autoComplete="off"
                 className="input-dark w-full px-4 py-2 rounded-lg"
                 placeholder="Digite um nome para identificar o pedido"
               />
@@ -298,6 +299,7 @@ export default function OrderSidePanel({
                   value={selectedClient ? selectedClient.name : ""}
                   placeholder="Selecione um cliente"
                   readOnly
+                  autoComplete="off"
                   className="input-dark flex-1 px-4 py-2 rounded-lg cursor-pointer"
                   onClick={openClientModal}
                 />
@@ -322,6 +324,7 @@ export default function OrderSidePanel({
                 value={formData.due_date}
                 onChange={handleInputChange}
                 required
+                autoComplete="off"
                 className="input-dark w-full px-4 py-2 rounded-lg"
               />
             </div>
@@ -340,6 +343,7 @@ export default function OrderSidePanel({
                 min="0"
                 max="100"
                 step="0.01"
+                autoComplete="off"
                 className="input-dark w-full px-4 py-2 rounded-lg"
                 placeholder="16"
               />
@@ -357,6 +361,7 @@ export default function OrderSidePanel({
                 onChange={handleInputChange}
                 min="0"
                 step="0.01"
+                autoComplete="off"
                 className="input-dark w-full px-4 py-2 rounded-lg"
                 placeholder="0.00"
               />

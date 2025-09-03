@@ -91,6 +91,7 @@ export default function ClientSelectModal({
               placeholder="Buscar por nome, NUIT, contato ou categoria..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              autoComplete="off"
               className="input-dark w-full pl-10 pr-4 py-3 rounded-lg"
             />
           </div>

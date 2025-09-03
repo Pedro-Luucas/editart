@@ -125,6 +125,7 @@ export default function Clients() {
             placeholder="Buscar por nome, NUIT, contato ou categoria..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            autoComplete="off"
             className="input-dark w-full px-4 py-2 rounded-lg"
           />
         </div>
