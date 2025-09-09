@@ -6,7 +6,6 @@ import Orders from "./pages/Orders";
 import OrderView from "./pages/OrderView";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
-import RegisterUser from "./pages/RegisterUser";
 import "./App.css";
 
 interface User {
@@ -113,8 +112,6 @@ function App() {
         />;
       case "settings":
         return <Settings user={user!} onNavigate={handleNavigate} />;
-      case "register-user":
-        return <RegisterUser currentUser={user!} onBack={() => handleNavigate("settings")} />;
       case "home":
       default:
         return <Home />;

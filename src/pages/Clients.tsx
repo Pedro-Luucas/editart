@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { RotateCcw, Plus, Edit, Copy, Trash2, UserPlus, X } from 'lucide-react';
+import { useState, useEffect, useMemo } from "react";
+import { RotateCcw, Plus, Edit, Trash2, UserPlus, X } from 'lucide-react';
 import { Button } from "../components/ui/button";
 import { formatDateOnly } from "../utils/dateUtils.ts";
 import { Client } from "../types/client";
 import ClientSidePanel from "../components/clients/ClientSidePanel";
+import Pagination from "../components/ui/Pagination";
 import { 
   useClients, 
   useClientsLoading, 
@@ -14,7 +15,13 @@ import {
   useUpdateClient,
   useDeleteClient,
   useSetSearchTerm,
-  useGetFilteredClients
+  useGetFilteredClients,
+  useGetPaginatedClients,
+  useGetTotalPages,
+  useCurrentPage,
+  useItemsPerPage,
+  useSetCurrentPage,
+  useSetItemsPerPage
 } from "../stores/clientStore";
 
 export default function Clients() {
@@ -23,6 +30,8 @@ export default function Clients() {
   const loading = useClientsLoading();
   const error = useClientsError();
   const searchTerm = useSearchTerm();
+  const currentPage = useCurrentPage();
+  const itemsPerPage = useItemsPerPage();
   
   // ===== ACTION HOOKS =====
   const loadClients = useLoadClients();
@@ -30,7 +39,11 @@ export default function Clients() {
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const setSearchTerm = useSetSearchTerm();
+  const setCurrentPage = useSetCurrentPage();
+  const setItemsPerPage = useSetItemsPerPage();
   const getFilteredClients = useGetFilteredClients();
+  const getPaginatedClients = useGetPaginatedClients();
+  const getTotalPages = useGetTotalPages();
   
   // ===== LOCAL STATE (apenas para UI específica) =====
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -49,6 +62,16 @@ export default function Clients() {
     console.log("🟢 useMemo filteredClients executado");
     return getFilteredClients();
   }, [clients, searchTerm, getFilteredClients]);
+
+  const paginatedClients = useMemo(() => {
+    console.log("🟢 useMemo paginatedClients executado");
+    return getPaginatedClients();
+  }, [filteredClients, currentPage, itemsPerPage, getPaginatedClients]);
+
+  const totalPages = useMemo(() => {
+    console.log("🟢 useMemo totalPages executado");
+    return getTotalPages();
+  }, [filteredClients, itemsPerPage, getTotalPages]);
 
   const handleDeleteClient = async (clientId: string) => {
     if (!confirm("Tem certeza que deseja excluir este cliente?")) {
@@ -215,8 +238,9 @@ export default function Clients() {
           )}
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredClients.map((client) => (
+        <>
+          <div className="space-y-4">
+            {paginatedClients.map((client) => (
             <div key={client.id} className="glass-effect p-5 rounded-xl hover-lift">
               <div className="flex flex-wrap justify-between items-start gap-4">
                 <div className="flex-1 min-w-80">
@@ -310,8 +334,19 @@ export default function Clients() {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredClients.length}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </>
       )}
 
       {/* ClientSidePanel para adicionar/editar cliente */}

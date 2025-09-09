@@ -13,6 +13,8 @@ export interface ClientData {
 export interface ClientUI {
   searchTerm: string;
   isSubmitting: boolean;
+  currentPage: number;
+  itemsPerPage: number;
 }
 
 export interface ClientStore extends ClientData, ClientUI {
@@ -26,20 +28,17 @@ export interface ClientStore extends ClientData, ClientUI {
   // ===== ACTIONS DE UI =====
   setSearchTerm: (term: string) => void;
   setIsSubmitting: (submitting: boolean) => void;
+  setCurrentPage: (page: number) => void;
+  setItemsPerPage: (items: number) => void;
   
   // ===== COMPUTED/SELECTORS =====
   getFilteredClients: () => Client[];
+  getPaginatedClients: () => Client[];
+  getTotalPages: () => number;
   getClientById: (id: string) => Client | undefined;
 }
 
 // ===== ESTADO INICIAL =====
-const initialFormData: CreateClientDto = {
-  name: '',
-  nuit: '',
-  contact: '',
-  category: '',
-  observations: '',
-};
 
 // ===== CRIAÇÃO DO STORE =====
 // ✅ BEST PRACTICE: Não exportar o store diretamente para evitar uso acidental
@@ -55,6 +54,8 @@ export const useClientStore = create<ClientStore>()(
       // UI
       searchTerm: '',
       isSubmitting: false,
+      currentPage: 1,
+      itemsPerPage: 10,
 
       // ===== ACTIONS DE DADOS =====
       loadClients: async () => {
@@ -148,9 +149,13 @@ export const useClientStore = create<ClientStore>()(
       },
 
       // ===== ACTIONS DE UI =====
-      setSearchTerm: (term: string) => set({ searchTerm: term }),
+      setSearchTerm: (term: string) => set({ searchTerm: term, currentPage: 1 }),
       
       setIsSubmitting: (submitting: boolean) => set({ isSubmitting: submitting }),
+      
+      setCurrentPage: (page: number) => set({ currentPage: page }),
+      
+      setItemsPerPage: (items: number) => set({ itemsPerPage: items, currentPage: 1 }),
 
       // ===== COMPUTED/SELECTORS =====
       getFilteredClients: () => {
@@ -165,6 +170,23 @@ export const useClientStore = create<ClientStore>()(
           
           return matchesSearch;
         });
+      },
+
+      getPaginatedClients: () => {
+        console.log("🟢 Store.getPaginatedClients executado");
+        const { currentPage, itemsPerPage } = get();
+        const filteredClients = get().getFilteredClients();
+        
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        
+        return filteredClients.slice(startIndex, endIndex);
+      },
+
+      getTotalPages: () => {
+        const { itemsPerPage } = get();
+        const filteredClients = get().getFilteredClients();
+        return Math.ceil(filteredClients.length / itemsPerPage);
       },
 
       getClientById: (id: string) => {
@@ -186,6 +208,8 @@ export const useClientsError = () => useClientStore(state => state.error);
 
 export const useSearchTerm = () => useClientStore(state => state.searchTerm);
 export const useIsSubmitting = () => useClientStore(state => state.isSubmitting);
+export const useCurrentPage = () => useClientStore(state => state.currentPage);
+export const useItemsPerPage = () => useClientStore(state => state.itemsPerPage);
 
 // === ACTION HOOKS (Atomic) ===
 export const useLoadClients = () => useClientStore(state => state.loadClients);
@@ -195,9 +219,13 @@ export const useDeleteClient = () => useClientStore(state => state.deleteClient)
 export const useUpdateClientDebt = () => useClientStore(state => state.updateClientDebt);
 export const useSetSearchTerm = () => useClientStore(state => state.setSearchTerm);
 export const useSetIsSubmitting = () => useClientStore(state => state.setIsSubmitting);
+export const useSetCurrentPage = () => useClientStore(state => state.setCurrentPage);
+export const useSetItemsPerPage = () => useClientStore(state => state.setItemsPerPage);
 
 // === COMPUTED HOOKS (Atomic) ===
 export const useGetFilteredClients = () => useClientStore(state => state.getFilteredClients);
+export const useGetPaginatedClients = () => useClientStore(state => state.getPaginatedClients);
+export const useGetTotalPages = () => useClientStore(state => state.getTotalPages);
 export const useGetClientById = () => useClientStore(state => state.getClientById);
 
 // ===== HOOKS DE CONVENIÊNCIA (Para casos específicos) =====

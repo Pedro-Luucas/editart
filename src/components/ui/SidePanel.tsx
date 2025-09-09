@@ -42,9 +42,8 @@ export default function SidePanel({
           <h2 className="text-lg font-semibold text-primary-100">{title}</h2>
           <Button 
             onClick={onClose} 
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="text-primary-400 hover:text-primary-200 transition-colors p-1 rounded"
           >
             <span className="sr-only">Fechar</span>
             <X className="w-5 h-5" />
@@ -63,7 +62,6 @@ export default function SidePanel({
               <Button
                 onClick={onCancel}
                 variant="outline"
-                className="px-4 py-2 text-primary-300 rounded-lg text-sm hover:text-primary-100 transition-all"
                 disabled={isLoading}
               >
                 Cancelar

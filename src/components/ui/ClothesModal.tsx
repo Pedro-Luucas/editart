@@ -542,7 +542,6 @@ export default function ClothesModal({ isOpen, onClose, orderId, onClothesAdded 
             onClick={onClose}
             variant="outline"
             disabled={loading}
-            className="bg-primary-500 border-primary-500 text-primary-300 hover:bg-primary-600 hover:text-primary-100"
           >
             Cancelar
           </Button>

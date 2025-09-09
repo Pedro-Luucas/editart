@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Search, X, User, Phone, FileText, Tag } from 'lucide-react';
+import { Search, X, User, Phone, FileText, Tag, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from "./button";
 import { Client } from "../../types/client";
 
@@ -21,10 +21,15 @@ export default function ClientSelectModal({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     if (isOpen) {
       loadClients();
+      // Reset pagination when modal opens
+      setCurrentPage(1);
+      setSearchTerm("");
     }
   }, [isOpen]);
 
@@ -42,12 +47,29 @@ export default function ClientSelectModal({
     }
   };
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.nuit.includes(searchTerm) ||
-    client.contact.includes(searchTerm) ||
-    client.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = useMemo(() => {
+    return clients.filter(client =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.nuit.includes(searchTerm) ||
+      client.contact.includes(searchTerm) ||
+      client.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [clients, searchTerm]);
+
+  const paginatedClients = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredClients.slice(startIndex, endIndex);
+  }, [filteredClients, currentPage, itemsPerPage]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredClients.length / itemsPerPage);
+  }, [filteredClients.length, itemsPerPage]);
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleClientSelect = (client: Client) => {
     onSelect(client);
@@ -74,9 +96,8 @@ export default function ClientSelectModal({
           </h2>
           <Button
             onClick={onClose}
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="p-2 text-primary-400 hover:text-primary-200 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </Button>
@@ -95,10 +116,25 @@ export default function ClientSelectModal({
               className="input-dark w-full pl-10 pr-4 py-3 rounded-lg"
             />
           </div>
-          <p className="text-sm text-primary-400 mt-2">
-            {filteredClients.length} cliente(s) encontrado(s)
-            {searchTerm && ` de ${clients.length} total`}
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-sm text-primary-400">
+              {filteredClients.length} cliente(s) encontrado(s)
+              {searchTerm && ` de ${clients.length} total`}
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-primary-400">Itens por página:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="bg-primary-800 border border-primary-600 text-primary-100 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
@@ -147,7 +183,7 @@ export default function ClientSelectModal({
             </div>
           ) : (
             <div className="h-full overflow-y-auto space-y-3">
-              {filteredClients.map((client) => (
+              {paginatedClients.map((client) => (
                 <div
                   key={client.id}
                   onClick={() => handleClientSelect(client)}
@@ -203,11 +239,100 @@ export default function ClientSelectModal({
 
         {/* Footer */}
         <div className="p-6 border-t border-primary-600">
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-sm text-primary-300">
+                Página {currentPage} de {totalPages}
+              </div>
+              <div className="flex items-center gap-1">
+                {/* First page */}
+                <Button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  variant="secondary"
+                  size="sm"
+                  className="px-2 py-1"
+                  title="Primeira página"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </Button>
+
+                {/* Previous page */}
+                <Button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  variant="secondary"
+                  size="sm"
+                  className="px-2 py-1"
+                  title="Página anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        variant={currentPage === pageNum ? "default" : "secondary"}
+                        size="sm"
+                        className={`px-3 py-1 ${
+                          currentPage === pageNum
+                            ? 'bg-secondary-600 text-primary-100'
+                            : 'hover:bg-primary-700'
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                {/* Next page */}
+                <Button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  variant="secondary"
+                  size="sm"
+                  className="px-2 py-1"
+                  title="Próxima página"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+
+                {/* Last page */}
+                <Button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  variant="secondary"
+                  size="sm"
+                  className="px-2 py-1"
+                  title="Última página"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3">
             <Button
               onClick={onClose}
-              variant="ghost"
-              className="px-6 py-2 text-primary-300 hover:text-primary-100 font-medium transition-colors"
+              variant="outline"
             >
               Cancelar
             </Button>

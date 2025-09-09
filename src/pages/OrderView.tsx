@@ -515,9 +515,9 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
                     {/* Delete Button */}
                     <Button
                       onClick={() => handleDeleteClothes(item.id)}
-                      variant="ghost"
+                      variant="destructive"
                       size="sm"
-                      className="mt-4 text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-red-600/30 hover:border-red-500/50"
+                      className="mt-4"
                       disabled={deletingClothes === item.id}
                     >
                       {deletingClothes === item.id ? (

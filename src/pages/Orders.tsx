@@ -301,7 +301,7 @@ export default function Orders({ onNavigate, currentUser }: OrdersProps = {}) {
           <div className="flex-1 min-w-60">
             <input
               type="text"
-              placeholder="Buscar por cliente, ID do pedido ou contato..."
+              placeholder="Buscar pedido..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               autoComplete="off"

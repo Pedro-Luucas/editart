@@ -1,6 +1,6 @@
 import { Order } from "../types/order";
 import { Client } from "../types/client";
-import { Clothes, CLOTHING_TYPE_LABELS } from "../types/clothes";
+import { Clothes, CLOTHING_TYPE_LABELS, SERVICE_LOCATION_LABELS, SERVICE_TYPE_LABELS,  } from "../types/clothes";
 import { Impression } from "../types/impression";
 
 interface InvoicePrintProps {
@@ -27,7 +27,7 @@ export default function InvoicePrint({ order, client, clothes, impressions }: In
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Nota Fiscal - ${order.name}</title>
+          <title>Controle Interno - ${order.name}</title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -143,8 +143,8 @@ export default function InvoicePrint({ order, client, clothes, impressions }: In
             <!-- Header with Logo -->
             <div class="header">
               <div class="header-left">
-                <img src="/src/assets/editartlogo.png" alt="EditArt Logo" class="logo" onerror="this.style.display='none'">
-                <h1 class="title">NOTA FISCAL</h1>
+                <img src="/editartlogo.png" alt="EditArt Logo" class="logo" onerror="this.style.display='none'">
+                <h1 class="title">CONTROLE INTERNO</h1>
               </div>
               <div class="header-right">
                 <div class="company-name">EditArt Serigrafia & Gráfica</div>
@@ -175,40 +175,63 @@ export default function InvoicePrint({ order, client, clothes, impressions }: In
               `}
             </div>
 
-            <!-- Products Section -->
-            ${clothes.length > 0 ? `
-              <div class="section">
-                <h2 class="section-title">PRODUTOS</h2>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Produto</th>
-                      <th>Quantidade</th>
-                      <th>Preço Unitário</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${clothes.map((item) => {
-                      const unitPrice = item.unit_price + item.services.reduce((sum, s) => sum + s.unit_price, 0);
-                      const total = unitPrice * item.total_quantity;
-                      const productName = item.clothing_type === 'other' 
-                        ? item.custom_type 
-                        : CLOTHING_TYPE_LABELS[item.clothing_type];
-                      
-                      return `
-                        <tr>
-                          <td>${productName}</td>
-                          <td class="text-center">${item.total_quantity}</td>
-                          <td class="text-right">${formatCurrency(unitPrice)}</td>
-                          <td class="text-right"><strong>${formatCurrency(total)}</strong></td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-            ` : ''}
+            <!-- Produtos -->
+${clothes.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">PRODUTOS</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Quantidade</th>
+          <th>Preço Unitário</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${clothes.map((item) => {
+          const precoBase = item.unit_price;
+          const precoServicos = item.services.reduce((soma, servico) => soma + servico.unit_price, 0);
+          const precoUnitario = precoBase + precoServicos;
+          const total = precoUnitario * item.total_quantity;
+
+          const nomeProduto = item.clothing_type === "other"
+            ? item.custom_type || "Outro"
+            : CLOTHING_TYPE_LABELS[item.clothing_type];
+
+          // Linha principal do produto
+          let linhasProduto = `
+            <tr>
+              <td>${nomeProduto}</td>
+              <td class="text-center">${item.total_quantity}</td>
+              <td class="text-right">${formatCurrency(precoBase)}</td>
+              <td class="text-right"><strong>${formatCurrency(total)}</strong></td>
+            </tr>
+          `;
+
+          // Serviços vinculados à peça
+          if (item.services.length > 0) {
+            linhasProduto += item.services.map(servico => `
+              <tr class="service-row">
+                <td style="padding-left: 2rem; font-size: 0.9rem; color: #555;">
+                  ↳ ${SERVICE_TYPE_LABELS[servico.service_type]} 
+                  (${SERVICE_LOCATION_LABELS[servico.location]})
+                  ${servico.description ? ` - ${servico.description}` : ""}
+                </td>
+                <td class="text-center">—</td>
+                <td class="text-right">${formatCurrency(servico.unit_price)}</td>
+                <td class="text-right">—</td>
+              </tr>
+            `).join("");
+          }
+
+          return linhasProduto;
+        }).join("")}
+      </tbody>
+    </table>
+  </div>
+` : ''}
+
 
             <!-- Impressions Section -->
             ${impressions.length > 0 ? `
@@ -280,7 +303,7 @@ export default function InvoicePrint({ order, client, clothes, impressions }: In
       onClick={handlePrint}
       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
     >
-      🖨️ Imprimir Nota Fiscal
+      🖨️ Imprimir
     </button>
   );
 }

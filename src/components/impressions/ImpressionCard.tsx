@@ -93,19 +93,14 @@ export default function ImpressionCard({
         </div>
       )}
 
-      {/* Creation Date */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-primary-400 mb-2">Criado em</label>
-        <p className="text-primary-300 text-sm">{formatDateTime(impression.created_at)}</p>
-      </div>
 
       {/* Delete Button */}
       {onDelete && (
         <Button
           onClick={() => onDelete(impression.id)}
-          variant="ghost"
+          variant="destructive"
           size="sm"
-          className="mt-4 text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-red-600/30 hover:border-red-500/50"
+          className="mt-4"
           disabled={deletingImpression === impression.id}
         >
           {deletingImpression === impression.id ? (

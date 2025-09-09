@@ -124,9 +124,8 @@ export default function ImpressionModal({ isOpen, onClose, orderId, onImpression
           </h2>
           <Button
             onClick={onClose}
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="text-primary-400 hover:text-primary-100"
           >
             <X className="w-5 h-5" />
           </Button>

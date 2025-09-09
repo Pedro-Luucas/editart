@@ -54,7 +54,7 @@ export default function Sidebar({ currentPage, onNavigate, isCollapsed, onToggle
         <div className="p-3 border-b border-primary-700">
           <Button
             onClick={onToggleCollapse}
-            variant="ghost"
+            variant="outline"
             className="w-full flex items-center justify-center p-1.5 rounded-lg bg-primary-800 hover:bg-primary-700 transition-colors"
             title={isCollapsed ? "Expandir menu" : "Recolher menu"}
           >
