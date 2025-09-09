@@ -27,4 +27,5 @@ tokio = "1.47.1"
 sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "time", "uuid"] }
 dotenv = "0.15.0"
 uuid = { version = "1.18.0", features = ["v4", "serde"] }
+dirs = "5.0"
 

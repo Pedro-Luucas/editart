@@ -1,3 +1,4 @@
+mod config;
 mod database;
 mod models;
 mod dto;
@@ -9,11 +10,6 @@ mod resize;
 use commands::*;
 use database::init_database;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -29,7 +25,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            greet,
             create_client,
             get_client_by_id,
             get_clients_by_name,

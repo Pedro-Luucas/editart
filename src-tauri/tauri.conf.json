@@ -13,8 +13,7 @@
     "windows": [
       {
         "title": "editart",
-        "width": 800,
-        "height": 600
+        "maximized": true
       }
     ],
     "security": {

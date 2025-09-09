@@ -7,7 +7,6 @@ import OrderView from "./pages/OrderView";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import RegisterUser from "./pages/RegisterUser";
-import { useAutoResize } from "./hooks/useResponsiveWindow";
 import "./App.css";
 
 interface User {
@@ -22,8 +21,6 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Auto-resize window on app startup using responsive configuration
-  useAutoResize('sidebar', true); // Uses the 'sidebar' preset config
 
   // Simple routing based on hash
   const getCurrentPage = () => {
