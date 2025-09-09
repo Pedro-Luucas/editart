@@ -6,13 +6,16 @@ mod repositories;
 mod services;
 mod commands;
 mod resize;
+mod backup; 
 
 use commands::*;
 use database::init_database;
 
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Inicializar logger
+    env_logger::init();
+    
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|_app| {
@@ -59,7 +62,10 @@ pub fn run() {
             create_user,
             list_users,
             resize_current_window,
-            get_screen_size
+            get_screen_size,
+            create_database_backup,
+            restore_database_backup,
+            get_backup_info
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

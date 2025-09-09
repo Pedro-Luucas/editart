@@ -1,5 +1,7 @@
 import { Settings as SettingsIcon, Database, Wrench, Palette, BarChart3, Save, RefreshCw, FileText, UserPlus } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { invoke } from '@tauri-apps/api/core';
+import { useState } from 'react';
 
 interface SettingsProps {
   user?: {
@@ -10,7 +12,48 @@ interface SettingsProps {
   onNavigate?: (page: string) => void;
 }
 
+
+
 export default function Settings({ user, onNavigate }: SettingsProps) {
+
+
+
+  const [backupStatus, setBackupStatus] = useState<string | null>(null);
+
+  async function handleCreateBackup() {
+    try {
+      const result = await invoke<string>('create_database_backup');
+      setBackupStatus(result);
+      alert(result); // ou use toast
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao criar backup');
+    }
+  }
+  
+  async function handleRestoreBackup() {
+    try {
+      const result = await invoke<string>('restore_database_backup');
+      setBackupStatus(result);
+      alert(result);
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao restaurar backup');
+    }
+  }
+  
+  async function handleGetBackupInfo() {
+    try {
+      const info = await invoke<string | null>('get_backup_info');
+      setBackupStatus(info);
+      console.log(backupStatus)
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao buscar informações do backup');
+    }
+  }
+  
+
   return (
     <div className="max-w-5xl mx-auto">
       <div className="border-b border-primary-600 pb-4 mb-6">
@@ -162,26 +205,37 @@ export default function Settings({ user, onNavigate }: SettingsProps) {
           </h2>
           
           <div className="flex flex-wrap gap-4">
-            <Button className="px-6 py-3 rounded-xl font-medium hover-lift transition-all">
-              <span className="flex items-center gap-2">
-                <Save className="w-4 h-4" />
-                Fazer Backup
-              </span>
-            </Button>
-            
-            <Button className="px-6 py-3 rounded-xl font-medium hover-lift transition-all">
-              <span className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Sincronizar Dados
-              </span>
-            </Button>
-            
-            <Button variant="outline" className="px-6 py-3 text-primary-300 rounded-xl font-medium transition-all">
-              <span className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Exportar Relatório
-              </span>
-            </Button>
+          <Button
+  onClick={handleCreateBackup}
+  className="px-6 py-3 rounded-xl font-medium hover-lift transition-all"
+>
+  <span className="flex items-center gap-2">
+    <Save className="w-4 h-4" />
+    Fazer Backup
+  </span>
+</Button>
+
+<Button
+  onClick={handleRestoreBackup}
+  className="px-6 py-3 rounded-xl font-medium hover-lift transition-all"
+>
+  <span className="flex items-center gap-2">
+    <RefreshCw className="w-4 h-4" />
+    Restaurar Backup
+  </span>
+</Button>
+
+<Button
+  onClick={handleGetBackupInfo}
+  variant="outline"
+  className="px-6 py-3 text-primary-300 rounded-xl font-medium transition-all"
+>
+  <span className="flex items-center gap-2">
+    <FileText className="w-4 h-4" />
+    Informações do Backup
+  </span>
+</Button>
+
           </div>
         </div>
       </div>
