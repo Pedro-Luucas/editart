@@ -2,7 +2,7 @@ use crate::database::get_db_pool;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, FromRow};
 use std::path::PathBuf;
-use time::{OffsetDateTime, macros::format_description};
+use time::OffsetDateTime;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DatabaseBackup {
@@ -99,13 +99,35 @@ pub struct ClothingServiceBackup {
 pub struct BackupService;
 
 impl BackupService {
+    fn parse_datetime(date_str: &str) -> Result<OffsetDateTime, String> {
+        // Try RFC3339 format first (new format)
+        if let Ok(dt) = OffsetDateTime::parse(date_str, &time::format_description::well_known::Rfc3339) {
+            return Ok(dt);
+        }
+        
+        // Try old format: "2025-09-10 18:22:38.09965 +00:00:00"
+        let old_format = time::format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond] [offset_hour]:[offset_minute]:[offset_second]")
+            .map_err(|_| "Failed to create old format parser")?;
+        if let Ok(dt) = OffsetDateTime::parse(date_str, &old_format) {
+            return Ok(dt);
+        }
+        
+        // Try another old format: "2025-09-10 18:22:38.09965 +00:00:00" (with different subsecond precision)
+        let old_format2 = time::format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:1..] [offset_hour]:[offset_minute]:[offset_second]")
+            .map_err(|_| "Failed to create old format parser 2")?;
+        if let Ok(dt) = OffsetDateTime::parse(date_str, &old_format2) {
+            return Ok(dt);
+        }
+        
+        Err(format!("Failed to parse datetime: {}", date_str))
+    }
     pub async fn create_backup() -> Result<String, String> {
         log::info!("Starting database backup process...");
         
         let pool = get_db_pool()?;
         let mut backup = DatabaseBackup {
             version: "1.0.0".to_string(),
-            created_at: OffsetDateTime::now_utc().to_string(),
+            created_at: OffsetDateTime::now_utc().format(&time::format_description::well_known::Rfc3339).unwrap(),
             users: Vec::new(),
             clients: Vec::new(),
             orders: Vec::new(),
@@ -130,8 +152,8 @@ impl BackupService {
                 login: row.get("login"),
                 password: row.get("password"),
                 role: row.get("role"),
-                created_at: row.get::<OffsetDateTime, _>("created_at").to_string(),
-                updated_at: row.get::<OffsetDateTime, _>("updated_at").to_string(),
+                created_at: row.get::<OffsetDateTime, _>("created_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
+                updated_at: row.get::<OffsetDateTime, _>("updated_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
             });
         }
         log::info!("Backed up {} users", backup.users.len());
@@ -155,8 +177,8 @@ impl BackupService {
                 category: row.get("category"),
                 observations: row.get("observations"),
                 debt: row.get("debt"),
-                created_at: row.get::<OffsetDateTime, _>("created_at").to_string(),
-                updated_at: row.get::<OffsetDateTime, _>("updated_at").to_string(),
+                created_at: row.get::<OffsetDateTime, _>("created_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
+                updated_at: row.get::<OffsetDateTime, _>("updated_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
             });
         }
         log::info!("Backed up {} clients", backup.clients.len());
@@ -185,8 +207,8 @@ impl BackupService {
                 total: row.get("total"),
                 status: row.get("status"),
                 debt: row.get("debt"),
-                created_at: row.get::<OffsetDateTime, _>("created_at").to_string(),
-                updated_at: row.get::<OffsetDateTime, _>("updated_at").to_string(),
+                created_at: row.get::<OffsetDateTime, _>("created_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
+                updated_at: row.get::<OffsetDateTime, _>("updated_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
             });
         }
         log::info!("Backed up {} orders", backup.orders.len());
@@ -210,8 +232,8 @@ impl BackupService {
                 material: row.get("material"),
                 description: row.get("description"),
                 price: row.get("price"),
-                created_at: row.get::<OffsetDateTime, _>("created_at").to_string(),
-                updated_at: row.get::<OffsetDateTime, _>("updated_at").to_string(),
+                created_at: row.get::<OffsetDateTime, _>("created_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
+                updated_at: row.get::<OffsetDateTime, _>("updated_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
             });
         }
         log::info!("Backed up {} impressions", backup.impressions.len());
@@ -236,8 +258,8 @@ impl BackupService {
                 sizes: row.get("sizes"),
                 color: row.get("color"),
                 total_quantity: row.get("total_quantity"),
-                created_at: row.get::<OffsetDateTime, _>("created_at").to_string(),
-                updated_at: row.get::<OffsetDateTime, _>("updated_at").to_string(),
+                created_at: row.get::<OffsetDateTime, _>("created_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
+                updated_at: row.get::<OffsetDateTime, _>("updated_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
             });
         }
         log::info!("Backed up {} clothes", backup.clothes.len());
@@ -260,8 +282,8 @@ impl BackupService {
                 location: row.get("location"),
                 description: row.get("description"),
                 unit_price: row.get("unit_price"),
-                created_at: row.get::<OffsetDateTime, _>("created_at").to_string(),
-                updated_at: row.get::<OffsetDateTime, _>("updated_at").to_string(),
+                created_at: row.get::<OffsetDateTime, _>("created_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
+                updated_at: row.get::<OffsetDateTime, _>("updated_at").format(&time::format_description::well_known::Rfc3339).unwrap(),
             });
         }
         log::info!("Backed up {} clothing services", backup.clothing_services.len());
@@ -357,9 +379,9 @@ impl BackupService {
         // Restore data (in order of dependencies)
         log::info!("Restoring users... ({} records)", backup.users.len());
         for user in &backup.users {
-            let created_at = OffsetDateTime::parse(&user.created_at, &time::format_description::well_known::Rfc3339)
+            let created_at = Self::parse_datetime(&user.created_at)
                 .map_err(|e| format!("Failed to parse created_at for user {}: {}", user.id, e))?;
-            let updated_at = OffsetDateTime::parse(&user.updated_at, &time::format_description::well_known::Rfc3339)
+            let updated_at = Self::parse_datetime(&user.updated_at)
                 .map_err(|e| format!("Failed to parse updated_at for user {}: {}", user.id, e))?;
 
             sqlx::query(
@@ -382,9 +404,9 @@ impl BackupService {
 
         log::info!("Restoring clients... ({} records)", backup.clients.len());
         for client in &backup.clients {
-            let created_at = OffsetDateTime::parse(&client.created_at, &time::format_description::well_known::Rfc3339)
+            let created_at = Self::parse_datetime(&client.created_at)
                 .map_err(|e| format!("Failed to parse created_at for client {}: {}", client.id, e))?;
-            let updated_at = OffsetDateTime::parse(&client.updated_at, &time::format_description::well_known::Rfc3339)
+            let updated_at = Self::parse_datetime(&client.updated_at)
                 .map_err(|e| format!("Failed to parse updated_at for client {}: {}", client.id, e))?;
 
             sqlx::query(
@@ -410,9 +432,9 @@ impl BackupService {
 
         log::info!("Restoring orders... ({} records)", backup.orders.len());
         for order in &backup.orders {
-            let created_at = OffsetDateTime::parse(&order.created_at, &time::format_description::well_known::Rfc3339)
+            let created_at = Self::parse_datetime(&order.created_at)
                 .map_err(|e| format!("Failed to parse created_at for order {}: {}", order.id, e))?;
-            let updated_at = OffsetDateTime::parse(&order.updated_at, &time::format_description::well_known::Rfc3339)
+            let updated_at = Self::parse_datetime(&order.updated_at)
                 .map_err(|e| format!("Failed to parse updated_at for order {}: {}", order.id, e))?;
 
             let due_date = match &order.due_date {
@@ -448,16 +470,13 @@ impl BackupService {
             .map_err(|e| format!("Failed to restore order {}: {}", order.id, e))?;
         }
           log::info!("Restored {} orders", backup.orders.len());
-
+// AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
           log::info!("Restoring impressions... ({} records)", backup.impressions.len());
           for impression in &backup.impressions {
-            let format = format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
-            
-              let created_at = OffsetDateTime::parse(&impression.created_at, &format)
+            let created_at = Self::parse_datetime(&impression.created_at)
                 .map_err(|e| format!("Failed to parse created_at for impression {}: {}", impression.id, e))?;
-            
-            let updated_at = OffsetDateTime::parse(&impression.updated_at, &format)
-                  .map_err(|e| format!("Failed to parse updated_at for impression {}: {}", impression.id, e))?;
+            let updated_at = Self::parse_datetime(&impression.updated_at)
+                .map_err(|e| format!("Failed to parse updated_at for impression {}: {}", impression.id, e))?;
 
               sqlx::query(
                 r#"
@@ -482,9 +501,9 @@ impl BackupService {
 
         log::info!("Restoring clothes... ({} records)", backup.clothes.len());
         for clothes in &backup.clothes {
-            let created_at = OffsetDateTime::parse(&clothes.created_at, &time::format_description::well_known::Rfc3339)
+            let created_at = Self::parse_datetime(&clothes.created_at)
                 .map_err(|e| format!("Failed to parse created_at for clothes {}: {}", clothes.id, e))?;
-            let updated_at = OffsetDateTime::parse(&clothes.updated_at, &time::format_description::well_known::Rfc3339)
+            let updated_at = Self::parse_datetime(&clothes.updated_at)
                 .map_err(|e| format!("Failed to parse updated_at for clothes {}: {}", clothes.id, e))?;
 
             sqlx::query(
@@ -511,9 +530,9 @@ impl BackupService {
 
         log::info!("Restoring clothing services... ({} records)", backup.clothing_services.len());
         for service in &backup.clothing_services {
-            let created_at = OffsetDateTime::parse(&service.created_at, &time::format_description::well_known::Rfc3339)
+            let created_at = Self::parse_datetime(&service.created_at)
                 .map_err(|e| format!("Failed to parse created_at for service {}: {}", service.id, e))?;
-            let updated_at = OffsetDateTime::parse(&service.updated_at, &time::format_description::well_known::Rfc3339)
+            let updated_at = Self::parse_datetime(&service.updated_at)
                 .map_err(|e| format!("Failed to parse updated_at for service {}: {}", service.id, e))?;
 
             sqlx::query(
@@ -542,13 +561,14 @@ impl BackupService {
     }
 
     fn get_backup_file_path() -> Result<PathBuf, String> {
-      let app_data_dir = dirs::data_dir()
+        let app_data_dir = dirs::data_dir()
             .ok_or_else(|| "Failed to get app data directory".to_string())?;
 
-        std::fs::create_dir_all(&app_data_dir)
-            .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+        let backup_dir = app_data_dir.join("editart");
+        std::fs::create_dir_all(&backup_dir)
+            .map_err(|e| format!("Failed to create backup directory: {}", e))?;
 
-        Ok(app_data_dir.join("database_backup.json"))
+        Ok(backup_dir.join("database_backup.json"))
     }
 
     pub fn get_backup_info() -> Result<Option<String>, String> {
