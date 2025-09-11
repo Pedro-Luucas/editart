@@ -1,8 +1,6 @@
-import React from 'react';
 import { Trash2, Wallet } from 'lucide-react';
 import { Button } from "../ui/button";
 import { Impression, IMPRESSION_MATERIAL_LABELS } from "../../types/impression";
-import { formatDateTime } from "../../utils/dateUtils";
 
 interface ImpressionCardProps {
   impression: Impression;

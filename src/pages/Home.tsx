@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useOrders, useOrdersLoading, useLoadOrders } from "../stores/orderStore";
 import { useClients, useClientsLoading, useLoadClients } from "../stores/clientStore";
 import { Users, ClipboardList, DollarSign, AlertTriangle } from 'lucide-react';
+import { ORDER_STATUS_LABELS } from "../types/order";
 
 // Componente auxiliar para os cards de métricas
 function MetricCard({ title, value, icon, color }: {
@@ -150,8 +151,8 @@ function Home() {
           <div className="space-y-3">
             {Object.entries(ordersByStatus).map(([status, count]) => (
               <div key={status} className="flex justify-between items-center">
-                <span className="text-primary-200 capitalize">
-                  {status.replace('_', ' ')}
+                <span className="text-primary-200">
+                  {ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS] || status}
                 </span>
                 <span className="font-semibold text-primary-100">{count}</span>
               </div>

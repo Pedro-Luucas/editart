@@ -135,7 +135,7 @@ impl BackupService {
             clothes: Vec::new(),
             clothing_services: Vec::new(),
         };
-
+        
         // Backup users
         log::info!("Backing up users table...");
         let users_rows = sqlx::query("SELECT id, login, password, role, created_at, updated_at FROM users ORDER BY created_at")

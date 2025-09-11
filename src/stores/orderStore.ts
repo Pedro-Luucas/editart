@@ -66,14 +66,6 @@ export interface OrderStore extends OrderData, OrderUI, OrderClothes {
 }
 
 // ===== ESTADO INICIAL =====
-const initialFormData: CreateOrderDto = {
-  name: '',
-  client_id: '',
-  due_date: '',
-  iva: 16,
-  discount: 0,
-  status: 'order_received' as OrderStatus,
-};
 
 // ===== CRIAÇÃO DO STORE =====
 // ✅ BEST PRACTICE: Não exportar o store diretamente para evitar uso acidental

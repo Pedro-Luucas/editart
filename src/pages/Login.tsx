@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { LogIn, User as UserIcon, Lock, AlertCircle, Sparkles } from "lucide-react";
+import { LogIn, User as UserIcon, Lock, AlertCircle } from "lucide-react";
 import { Button } from "../components/ui/button";
 import type { LoginDto, LoginResponseDto } from "../types/auth";
 
@@ -63,13 +63,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         {/* Header com Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-2xl flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
+              <img 
+                src="/editartlogo.png" 
+                alt="EditArt Logo" 
+                className="w-full h-full object-contain"
+              />
           </div>
-          <h1 className="text-3xl font-bold text-gradient-secondary mb-2">
-            EditArt
-          </h1>
           <p className="text-primary-300">
             Entre com suas credenciais
           </p>
@@ -134,26 +133,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </span>
             </Button>
           </form>
-        </div>
-
-        {/* Credenciais de Teste */}
-        <div className="glass-effect p-6 rounded-xl mt-6 border-l-4 border-l-teal-500">
-          <h3 className="font-semibold text-teal-400 mb-3 flex items-center gap-2">
-            <UserIcon className="w-5 h-5" />
-            Credenciais de Teste
-          </h3>
-          <div className="text-sm text-primary-300 space-y-2">
-            <div className="p-3 bg-primary-800/30 rounded-lg">
-              <p className="font-medium text-amber-400">Administrador:</p>
-              <p>Login: <span className="font-mono text-primary-100">admin</span></p>
-              <p>Password: <span className="font-mono text-primary-100">admin123</span></p>
-            </div>
-            <div className="p-3 bg-primary-800/30 rounded-lg">
-              <p className="font-medium text-teal-400">Usuário:</p>
-              <p>Login: <span className="font-mono text-primary-100">user</span></p>
-              <p>Password: <span className="font-mono text-primary-100">user123</span></p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

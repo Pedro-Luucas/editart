@@ -1,4 +1,3 @@
-import React from 'react';
 import { Wallet, Edit, Trash2, Calendar } from 'lucide-react';
 import { Button } from "../ui/button";
 import { Impression, IMPRESSION_MATERIAL_LABELS } from "../../types/impression";

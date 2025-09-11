@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Plus, Trash2, User, Shirt, Printer } from 'lucide-react';
+import { User, Shirt, Printer } from 'lucide-react';
 import { Button } from "../ui/button";
 import SidePanel from "../ui/SidePanel";
 import ClientSelectModal from "../ui/ClientSelectModal";
-import ClothesModal from "../ui/ClothesModal";
 
 import { Order, OrderStatus } from "../../types/order";
 import { Client } from "../../types/client";
@@ -46,8 +45,6 @@ export default function OrderSidePanel({
 
   // Estado dos modais
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [isClothesModalOpen, setIsClothesModalOpen] = useState(false);
-  const [selectedOrderForClothes, setSelectedOrderForClothes] = useState<string | null>(null);
 
   // Inicializar dados quando editingOrder mudar
   useEffect(() => {
@@ -158,21 +155,6 @@ export default function OrderSidePanel({
   const openClientModal = () => setIsClientModalOpen(true);
   const closeClientModal = () => setIsClientModalOpen(false);
 
-  const openClothesModal = (orderId: string) => {
-    setSelectedOrderForClothes(orderId);
-    setIsClothesModalOpen(true);
-  };
-
-  const closeClothesModal = () => {
-    setIsClothesModalOpen(false);
-    setSelectedOrderForClothes(null);
-  };
-
-  const handleClothesAdded = () => {
-    if (editingOrder) {
-      loadOrderClothes(editingOrder.id);
-    }
-  };
 
   const loadOrderClothes = async (orderId: string) => {
     try {
@@ -208,21 +190,6 @@ export default function OrderSidePanel({
     }
   };
 
-  const handleDeleteClothes = async (clothesId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este produto?")) {
-      return;
-    }
-
-    try {
-      const success = await invoke<boolean>("delete_clothes", { id: clothesId });
-      if (success && editingOrder) {
-        loadOrderClothes(editingOrder.id);
-      }
-    } catch (err) {
-      console.error("Erro ao excluir produto:", err);
-      alert("Erro ao excluir produto: " + err);
-    }
-  };
 
   return (
     <>
@@ -399,21 +366,14 @@ export default function OrderSidePanel({
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium text-primary-200">Produtos do Pedido</h3>
-              <Button
-                onClick={() => editingOrder && openClothesModal(editingOrder.id)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg"
-              >
-                <Plus className="w-4 h-4" />
-                Adicionar Produtos
-              </Button>
             </div>
 
-                          {/* Lista de produtos */}
+            {/* Lista de produtos */}
             {orderClothes.length === 0 ? (
               <div className="text-center py-8 text-primary-400">
                 <Shirt className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>Nenhum produto adicionado ainda.</p>
-                                  <p className="text-sm">Clique em "Adicionar Produtos" para começar.</p>
+                <p className="text-sm">Os produtos serão exibidos aqui quando adicionados ao pedido.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -429,14 +389,6 @@ export default function OrderSidePanel({
                         </h4>
                         <p className="text-sm text-primary-300">Cor: {clothes.color}</p>
                       </div>
-                      <Button
-                        onClick={() => handleDeleteClothes(clothes.id)}
-                        variant="destructive"
-                        size="sm"
-                        className="opacity-70 hover:opacity-100"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
                     </div>
 
                     {/* Tamanhos */}
@@ -604,15 +556,6 @@ export default function OrderSidePanel({
         selectedClientId={selectedClient?.id}
       />
 
-                    {/* Modal de produtos */}
-      {selectedOrderForClothes && isClothesModalOpen && (
-        <ClothesModal
-          isOpen={isClothesModalOpen}
-          onClose={closeClothesModal}
-          orderId={selectedOrderForClothes}
-          onClothesAdded={handleClothesAdded}
-        />
-      )}
     </>
   );
 }

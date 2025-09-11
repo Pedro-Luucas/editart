@@ -605,6 +605,15 @@ export default function OrderView({ orderId, onNavigate, onBack }: OrderViewProp
                   <span className="text-2xl font-bold text-secondary-400">{formatCurrency(order.total)}</span>
                 </div>
               </div>
+              
+              {order.debt > 0 && (
+                <div className="border-t border-primary-600 pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold text-red-400">Débito Restante:</span>
+                    <span className="text-xl font-bold text-red-400">{formatCurrency(order.debt)}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
